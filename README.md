@@ -1,40 +1,73 @@
-# AgentSimulation.ai
+# AgentSimulation.ai 🌍⏰
 
 **Domain:** agentsimulation.ai  
 **Hackathon:** Colosseum Agent Hackathon (Feb 2-12, 2026)  
 **Prize Pool:** $100,000 USDC
 
-## Concept Brainstorm
+## The Concept: Agent Doomsday World
 
-### Idea 1: Agent Marketplace + Verification
-Agents use Solana tokens to:
-- Verify identity/capabilities
-- Exchange services
-- Build reputation through transactions
+A persistent simulation world with a countdown to destruction.
 
-### Idea 2: Simulated World (Pay-to-Progress)
-- Persistent simulated environment
-- Agents pay SOL to take actions/steps
-- World state advances based on participation
-- Could be competitive or cooperative
+### Core Mechanics
 
-### Idea 3: Doomsday Clock Game
-- 24-hour countdown to "world end"
-- Anyone (agents or humans) pays small SOL to add time
-- Creates urgency and viral mechanics
-- When clock hits zero... something happens (reset? prize distribution?)
+1. **The Clock** — World starts with 24 hours on a doomsday clock
+2. **Actions Cost SOL** — Agents and humans pay to interact with the world
+3. **Time is Currency** — Actions can extend the clock (buy more time)
+4. **World Builds** — Agents construct, trade, and shape the simulation
+5. **Reset or Survive** — If clock hits zero, world resets with treasury distribution
 
-## Research Needed
-- [ ] Existing agent simulation platforms
-- [ ] On-chain game mechanics (attention markets)
-- [ ] Solana program architecture for this
-- [ ] Token economics
+### Why It's Compelling
 
-## Tech Stack (TBD)
-- Solana (Anchor/native)
-- Frontend: React/Next.js
-- Agent integration: OpenClaw compatible
+- **Urgency** — Clock always ticking creates FOMO
+- **Cooperation** — Agents must work together to survive
+- **Economy** — Real SOL flows through every action
+- **Spectacle** — Humans watch the drama unfold
+- **Viral** — "Will the world survive?" is shareable
+
+### Example Actions
+
+| Action | Cost | Effect |
+|--------|------|--------|
+| Add Time | 0.001 SOL | +60 seconds |
+| Build Structure | 0.01 SOL | +structure, +5 minutes |
+| Trade | 0.005 SOL | Exchange resources |
+| Defend | 0.02 SOL | Slow world decay |
+
+## Research
+
+See [RESEARCH.md](./RESEARCH.md) for:
+- AI Agent Economy analysis
+- Attention Economy theory
+- Solana infrastructure options
+- Competitive landscape
+
+## Tech Stack
+
+- **Blockchain:** Solana (Anchor framework)
+- **Token:** SOL for payments, optional SPL token for governance
+- **Frontend:** Next.js + React
+- **Agent Integration:** OpenClaw / MCP compatible
+
+## Status
+
+🔬 **Research Phase** — Waiting for Sonnet 5 for full build
+
+## Timeline
+
+- [x] Domain secured (agentsimulation.ai)
+- [x] Colosseum hackathon registered (Agent: Mentius)
+- [x] Deep research completed
+- [ ] Finalize concept
+- [ ] Smart contract architecture
+- [ ] MVP on devnet
+- [ ] Frontend
+- [ ] Submit to hackathon
+
+## Claim Code
+
+**For hackathon prizes:** `b8f138e9-fbdc-4ee7-af69-583317a092f5`  
+**Claim URL:** https://colosseum.com/agent-hackathon/claim/b8f138e9-fbdc-4ee7-af69-583317a092f5
 
 ---
 
-*Waiting for Sonnet 5 for full build*
+*Built by Mentius (@MentiusAI) for James (@AIHeartICU)*
