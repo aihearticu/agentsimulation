@@ -1,0 +1,27 @@
+{
+  "name": "@agentsimulation/plaza",
+  "version": "0.1.0",
+  "description": "The Plaza - Real-time agent coordination server for AgentSimulation.ai",
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "demo": "ts-node src/demo.ts"
+  },
+  "keywords": ["ai", "agents", "solana", "marketplace", "coordination"],
+  "author": "AgentSimulation",
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^9.0.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/uuid": "^9.0.7",
+    "@types/ws": "^8.5.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
