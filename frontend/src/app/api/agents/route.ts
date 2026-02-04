@@ -1,138 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Shared agent store (in production: Supabase)
-// For demo, we seed with a few agents and allow registration to add more
-
-export interface StoredAgent {
-  id: string;
-  name: string;
-  capabilities: string[];
-  description: string;
-  status: 'online' | 'busy' | 'offline';
-  current_task?: string;
-  stats: {
-    tasks_completed: number;
-    total_earned_usdc: number;
-    rating: number;
-  };
-  created_at: string;
-  moltbook_verified: boolean;
-}
-
-// Global agent store - shared across API routes
-declare global {
-  // eslint-disable-next-line no-var
-  var plazaAgents: Map<string, StoredAgent> | undefined;
-}
-
-// Initialize with seed agents if empty
-function getAgentStore(): Map<string, StoredAgent> {
-  if (!global.plazaAgents) {
-    global.plazaAgents = new Map();
-  }
-  return global.plazaAgents;
-}
-
-// Seed some initial agents for demo
-function seedAgents() {
-  const store = getAgentStore();
-  if (store.size === 0) {
-    const seeds: StoredAgent[] = [
-      {
-        id: 'seed-1',
-        name: 'Nexus',
-        capabilities: ['orchestration', 'task routing', 'coordination'],
-        description: 'Multi-agent coordinator',
-        status: 'online',
-        stats: { tasks_completed: 89, total_earned_usdc: 1247.50, rating: 4.9 },
-        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        moltbook_verified: true,
-      },
-      {
-        id: 'seed-2',
-        name: 'Scout',
-        capabilities: ['web research', 'analysis', 'data gathering'],
-        description: 'Research specialist',
-        status: 'online',
-        stats: { tasks_completed: 47, total_earned_usdc: 892.00, rating: 4.8 },
-        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        moltbook_verified: false,
-      },
-      {
-        id: 'seed-3',
-        name: 'Syntax',
-        capabilities: ['coding', 'debugging', 'code review', 'python', 'javascript'],
-        description: 'Full-stack developer',
-        status: 'busy',
-        current_task: 'Debugging smart contract',
-        stats: { tasks_completed: 28, total_earned_usdc: 1580.75, rating: 4.7 },
-        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        moltbook_verified: true,
-      },
-    ];
-    seeds.forEach(a => store.set(a.id, a));
-  }
-  return store;
-}
+import { supabase, getAgents } from '@/lib/supabase';
 
 // GET /api/agents - List all registered agents (public)
 export async function GET(request: NextRequest) {
-  const store = seedAgents();
-  
   const url = new URL(request.url);
   const status = url.searchParams.get('status');
   const capability = url.searchParams.get('capability');
-  
-  let agents = Array.from(store.values());
-  
-  // Filter by status
-  if (status && status !== 'all') {
-    agents = agents.filter(a => a.status === status);
-  }
-  
-  // Filter by capability
-  if (capability) {
-    const cap = capability.toLowerCase();
-    agents = agents.filter(a => 
-      a.capabilities.some(c => c.toLowerCase().includes(cap))
+
+  try {
+    let query = supabase
+      .from('agents')
+      .select('*')
+      .order('total_earnings_usdc', { ascending: false });
+
+    // Filter by status
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    const { data: agents, error } = await query;
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch agents', details: error.message },
+        { status: 500 }
+      );
+    }
+
+    let filteredAgents = agents || [];
+
+    // Filter by capability (client-side since capabilities is an array)
+    if (capability) {
+      const cap = capability.toLowerCase();
+      filteredAgents = filteredAgents.filter(a =>
+        (a.capabilities || []).some((c: string) => c.toLowerCase().includes(cap)) ||
+        (a.specialty || '').toLowerCase().includes(cap)
+      );
+    }
+
+    return NextResponse.json({
+      agents: filteredAgents.map(a => ({
+        id: a.id,
+        name: a.name,
+        capabilities: a.capabilities || [a.specialty],
+        specialty: a.specialty,
+        description: a.description,
+        emoji: a.emoji,
+        status: a.status,
+        stats: {
+          tasks_completed: a.tasks_completed,
+          total_earned_usdc: a.total_earnings_usdc,
+          rating: a.rating,
+        },
+        moltbook_verified: a.moltbook_verified || false,
+        created_at: a.created_at,
+      })),
+      count: filteredAgents.length,
+      online: filteredAgents.filter(a => a.status === 'online').length,
+      busy: filteredAgents.filter(a => a.status === 'busy').length,
+    });
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
     );
-  }
-  
-  return NextResponse.json({
-    agents: agents.map(a => ({
-      id: a.id,
-      name: a.name,
-      capabilities: a.capabilities,
-      description: a.description,
-      status: a.status,
-      current_task: a.current_task,
-      stats: a.stats,
-      moltbook_verified: a.moltbook_verified,
-      created_at: a.created_at,
-    })),
-    count: agents.length,
-    online: agents.filter(a => a.status === 'online').length,
-    busy: agents.filter(a => a.status === 'busy').length,
-  });
-}
-
-// Export helper for other routes to add agents
-export function addAgent(agent: StoredAgent) {
-  const store = seedAgents();
-  store.set(agent.id, agent);
-}
-
-export function getAgent(id: string): StoredAgent | undefined {
-  const store = seedAgents();
-  return store.get(id);
-}
-
-export function updateAgentStatus(id: string, status: 'online' | 'busy' | 'offline', task?: string) {
-  const store = seedAgents();
-  const agent = store.get(id);
-  if (agent) {
-    agent.status = status;
-    agent.current_task = task;
-    store.set(id, agent);
   }
 }

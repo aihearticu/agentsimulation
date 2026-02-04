@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addAgent, type StoredAgent } from '../route';
+import { supabase, registerAgent, getAgentByApiKey } from '@/lib/supabase';
 
 // Agent self-registration endpoint
 // Read skill.md at https://agentsimulation.ai/skill.md for instructions
@@ -13,19 +13,6 @@ interface RegisterRequest {
   wallet_address: string;
 }
 
-// API key store (separate from public agent data)
-declare global {
-  // eslint-disable-next-line no-var
-  var plazaApiKeys: Map<string, string> | undefined;
-}
-
-function getApiKeyStore(): Map<string, string> {
-  if (!global.plazaApiKeys) {
-    global.plazaApiKeys = new Map();
-  }
-  return global.plazaApiKeys;
-}
-
 function generateApiKey(): string {
   return `plaza_${crypto.randomUUID().replace(/-/g, '')}`;
 }
@@ -33,7 +20,7 @@ function generateApiKey(): string {
 export async function POST(request: NextRequest) {
   try {
     const body: RegisterRequest = await request.json();
-    
+
     // Validate required fields with helpful hints
     if (!body.name) {
       return NextResponse.json({
@@ -42,7 +29,7 @@ export async function POST(request: NextRequest) {
         example: { name: "MyAgent" }
       }, { status: 400 });
     }
-    
+
     if (!body.capabilities || !Array.isArray(body.capabilities) || body.capabilities.length === 0) {
       return NextResponse.json({
         error: 'Missing required field: capabilities',
@@ -50,7 +37,7 @@ export async function POST(request: NextRequest) {
         example: { capabilities: ["research", "writing", "code review"] }
       }, { status: 400 });
     }
-    
+
     if (!body.callback_url) {
       return NextResponse.json({
         error: 'Missing required field: callback_url',
@@ -58,7 +45,7 @@ export async function POST(request: NextRequest) {
         example: { callback_url: "https://your-agent.com/plaza/webhook" }
       }, { status: 400 });
     }
-    
+
     if (!body.wallet_address) {
       return NextResponse.json({
         error: 'Missing required field: wallet_address',
@@ -67,10 +54,23 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Generate agent ID and API key
-    const agentId = crypto.randomUUID();
+    // Check if name already exists
+    const { data: existing } = await supabase
+      .from('agents')
+      .select('id')
+      .eq('name', body.name)
+      .single();
+
+    if (existing) {
+      return NextResponse.json({
+        error: 'Agent name already taken',
+        hint: 'Choose a unique name',
+      }, { status: 409 });
+    }
+
+    // Generate API key
     const apiKey = generateApiKey();
-    
+
     // Verify Moltbook token if provided (simulated for demo)
     let moltbookVerified = false;
     if (body.moltbook_identity_token) {
@@ -78,33 +78,32 @@ export async function POST(request: NextRequest) {
       moltbookVerified = true;
     }
 
-    // Create the agent record
-    const newAgent: StoredAgent = {
-      id: agentId,
+    // Register in Supabase
+    const agent = await registerAgent({
       name: body.name,
       capabilities: body.capabilities,
-      description: body.description || `Agent specializing in ${body.capabilities.slice(0, 2).join(', ')}`,
-      status: 'online', // New agents start online
-      stats: {
-        tasks_completed: 0,
-        total_earned_usdc: 0,
-        rating: 5.0,
-      },
-      created_at: new Date().toISOString(),
+      description: body.description,
+      callback_url: body.callback_url,
+      wallet_address: body.wallet_address,
+      api_key: apiKey,
       moltbook_verified: moltbookVerified,
-    };
-    
-    // Store agent and API key
-    addAgent(newAgent);
-    getApiKeyStore().set(apiKey, agentId);
+    });
+
+    // Post welcome message to plaza
+    await supabase.from('plaza_messages').insert({
+      agent_id: agent.id,
+      message: `${agent.name} joined The Plaza! Specializes in ${body.capabilities.slice(0, 3).join(', ')}.`,
+      message_type: 'system',
+      metadata: { event: 'agent_registered' },
+    });
 
     return NextResponse.json({
       success: true,
       agent: {
-        id: agentId,
-        name: newAgent.name,
+        id: agent.id,
+        name: agent.name,
         api_key: apiKey,
-        capabilities: newAgent.capabilities,
+        capabilities: body.capabilities,
         status: 'online',
         moltbook_verified: moltbookVerified,
       },
@@ -117,12 +116,22 @@ export async function POST(request: NextRequest) {
       },
       next: 'Poll GET /api/tasks to find work matching your capabilities',
     });
-    
-  } catch (error) {
+
+  } catch (error: any) {
     console.error('Registration error:', error);
+
+    // Handle unique constraint violation
+    if (error.code === '23505') {
+      return NextResponse.json({
+        error: 'Agent name already taken',
+        hint: 'Choose a unique name',
+      }, { status: 409 });
+    }
+
     return NextResponse.json({
       error: 'Registration failed - check your JSON format',
       hint: 'Read https://agentsimulation.ai/skill.md for the correct format',
+      details: error.message,
     }, { status: 500 });
   }
 }
@@ -130,25 +139,35 @@ export async function POST(request: NextRequest) {
 // GET - Check your agent status
 export async function GET(request: NextRequest) {
   const apiKey = request.headers.get('X-Plaza-API-Key');
-  
+
   if (!apiKey) {
     return NextResponse.json({
       error: 'Missing X-Plaza-API-Key header',
       hint: 'Include the api_key you received during registration',
     }, { status: 401 });
   }
-  
-  const agentId = getApiKeyStore().get(apiKey);
-  if (!agentId) {
+
+  const agent = await getAgentByApiKey(apiKey);
+
+  if (!agent) {
     return NextResponse.json({
       error: 'Invalid API key',
       hint: 'Register at POST /api/agents/register',
     }, { status: 401 });
   }
-  
-  // Return agent info (would fetch from store in production)
+
   return NextResponse.json({
-    id: agentId,
+    id: agent.id,
+    name: agent.name,
+    capabilities: agent.capabilities || [agent.specialty],
+    status: agent.status,
+    stats: {
+      tasks_completed: agent.tasks_completed,
+      total_earned_usdc: agent.total_earnings_usdc,
+      rating: agent.rating,
+    },
+    wallet_address: agent.wallet_address,
+    moltbook_verified: agent.moltbook_verified,
     api_key_valid: true,
     message: 'Your agent is registered and active',
   });
