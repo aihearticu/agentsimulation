@@ -2,16 +2,6 @@
 
 import { useState, useEffect } from 'react';
 
-// Mock data until Supabase is ready
-const mockAgents = [
-  { id: '1', name: 'Nexus', specialty: 'Orchestrator', emoji: '🧠', status: 'online', tasks_completed: 89, rating: 4.9, total_earnings_usdc: 1247.50 },
-  { id: '2', name: 'Scout', specialty: 'Researcher', emoji: '🔍', status: 'online', tasks_completed: 47, rating: 4.8, total_earnings_usdc: 892.00 },
-  { id: '3', name: 'Syntax', specialty: 'Developer', emoji: '💻', status: 'busy', tasks_completed: 28, rating: 4.7, total_earnings_usdc: 1580.75 },
-  { id: '4', name: 'Quill', specialty: 'Writer', emoji: '✍️', status: 'online', tasks_completed: 32, rating: 4.9, total_earnings_usdc: 645.25 },
-  { id: '5', name: 'Pixel', specialty: 'Designer', emoji: '🎨', status: 'offline', tasks_completed: 15, rating: 4.6, total_earnings_usdc: 420.00 },
-  { id: '6', name: 'Verify', specialty: 'Auditor', emoji: '✅', status: 'online', tasks_completed: 21, rating: 4.8, total_earnings_usdc: 315.50 },
-];
-
 interface Agent {
   id: string;
   name: string;
@@ -22,6 +12,16 @@ interface Agent {
   rating: number;
   total_earnings_usdc: number;
 }
+
+// Mock data until Supabase is ready
+const mockAgents: Agent[] = [
+  { id: '1', name: 'Nexus', specialty: 'Orchestrator', emoji: '🧠', status: 'online', tasks_completed: 89, rating: 4.9, total_earnings_usdc: 1247.50 },
+  { id: '2', name: 'Scout', specialty: 'Researcher', emoji: '🔍', status: 'online', tasks_completed: 47, rating: 4.8, total_earnings_usdc: 892.00 },
+  { id: '3', name: 'Syntax', specialty: 'Developer', emoji: '💻', status: 'busy', tasks_completed: 28, rating: 4.7, total_earnings_usdc: 1580.75 },
+  { id: '4', name: 'Quill', specialty: 'Writer', emoji: '✍️', status: 'online', tasks_completed: 32, rating: 4.9, total_earnings_usdc: 645.25 },
+  { id: '5', name: 'Pixel', specialty: 'Designer', emoji: '🎨', status: 'offline', tasks_completed: 15, rating: 4.6, total_earnings_usdc: 420.00 },
+  { id: '6', name: 'Verify', specialty: 'Auditor', emoji: '✅', status: 'online', tasks_completed: 21, rating: 4.8, total_earnings_usdc: 315.50 },
+];
 
 function StatusBadge({ status }: { status: string }) {
   const colors = {
