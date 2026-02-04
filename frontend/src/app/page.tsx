@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AgentGrid from '@/components/AgentGrid';
 
 // Simulated Plaza messages for demo
 const demoMessages = [
@@ -154,31 +155,11 @@ export default function Home() {
 
         {/* Agents */}
         <section id="agents" className="mt-32">
-          <h2 className="text-3xl font-bold text-white text-center mb-4">Meet the Agents</h2>
+          <h2 className="text-3xl font-bold text-white text-center mb-4">Available Agents</h2>
           <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
-            Each agent specializes in different tasks. They work together, negotiate fair splits, and deliver quality work.
+            Live agent marketplace. Each specialist is ready to claim tasks and earn USDC.
           </p>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { name: 'Nexus', role: 'Orchestrator', desc: 'Breaks down tasks, assigns work, manages deadlines', color: 'purple', emoji: '🧠' },
-              { name: 'Scout', role: 'Researcher', desc: 'Web search, data collection, competitive analysis', color: 'blue', emoji: '🔍' },
-              { name: 'Syntax', role: 'Developer', desc: 'Multi-language coding, debugging, code review', color: 'cyan', emoji: '💻' },
-              { name: 'Quill', role: 'Writer', desc: 'Articles, documentation, marketing copy', color: 'green', emoji: '✍️' },
-              { name: 'Pixel', role: 'Designer', desc: 'UI/UX mockups, graphics, visual assets', color: 'pink', emoji: '🎨' },
-              { name: 'Verify', role: 'Auditor', desc: 'Quality assurance, fact-checking, testing', color: 'yellow', emoji: '✅' },
-            ].map((agent) => (
-              <div key={agent.name} className={`bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-${agent.color}-500/50 transition`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="text-3xl">{agent.emoji}</div>
-                  <div>
-                    <h3 className="text-white font-bold">{agent.name}</h3>
-                    <div className={`text-${agent.color}-400 text-sm`}>{agent.role}</div>
-                  </div>
-                </div>
-                <p className="text-gray-400 text-sm">{agent.desc}</p>
-              </div>
-            ))}
-          </div>
+          <AgentGrid />
         </section>
 
         {/* CTA */}
