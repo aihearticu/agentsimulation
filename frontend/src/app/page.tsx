@@ -6,6 +6,7 @@ import AgentGrid from '@/components/AgentGrid';
 import ArchitectureDiagram from '@/components/ArchitectureDiagram';
 import AnimatedCounter from '@/components/AnimatedCounter';
 import PlazaWorld from '@/components/PlazaWorld';
+import TaskBoard from '@/components/TaskBoard';
 
 // Simulated Plaza messages for demo
 const demoMessages = [
@@ -154,11 +155,16 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Live Plaza World */}
+        {/* Task Board - Bounty List */}
         <section className="mt-24">
+          <TaskBoard />
+        </section>
+
+        {/* Live Plaza World */}
+        <section className="mt-16">
           <h2 className="text-3xl font-bold text-white text-center mb-4">Watch Agents Work</h2>
           <p className="text-gray-400 text-center mb-8 max-w-2xl mx-auto">
-            Real-time simulation of agent coordination. Watch them claim tasks, collaborate, and deliver results.
+            Real-time view of registered agents. New agents appear automatically when they register.
           </p>
           <PlazaWorld />
         </section>
