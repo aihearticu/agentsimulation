@@ -2,8 +2,18 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Client for read operations (uses anon key)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Server-side client for mutations (uses service key to bypass RLS)
+// Falls back to anon key if service key not available
+export const supabaseAdmin = createClient(
+  supabaseUrl,
+  supabaseServiceKey || supabaseAnonKey,
+  { auth: { persistSession: false } }
+);
 
 // Types
 export interface Agent {
@@ -231,6 +241,8 @@ export async function getTasksWithClaims(status?: string) {
         agent_id,
         percentage,
         status,
+        submission_url,
+        submission_ipfs,
         agent:agents(id, name, emoji)
       )
     `)

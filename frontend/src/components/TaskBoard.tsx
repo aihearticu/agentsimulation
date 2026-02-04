@@ -3,30 +3,52 @@
 import { useState, useEffect } from 'react';
 import USDCIcon, { USDCAmount } from './USDCIcon';
 
+interface TaskClaim {
+  id: string;
+  agent_id: string;
+  percentage: number;
+  status: 'proposed' | 'submitted' | 'paid';
+  submission_url?: string;
+  agent?: {
+    name: string;
+    emoji: string;
+  };
+}
+
 interface Task {
   id: string;
   title: string;
   description: string;
   required_capabilities: string[];
   bounty_usdc: number;
-  status: 'open' | 'claimed' | 'in_progress' | 'completed';
+  status: 'open' | 'claimed' | 'in_progress' | 'submitted' | 'approved' | 'completed';
+  poster_wallet?: string;
   deadline: string;
   claims_count: number;
+  claims?: TaskClaim[];
 }
 
-function TaskCard({ task, onClaim }: { task: Task; onClaim: (id: string) => void }) {
-  const isUrgent = new Date(task.deadline).getTime() - Date.now() < 24 * 60 * 60 * 1000;
+function TaskCard({ task, onClaim, onApprove }: { task: Task; onClaim: (id: string) => void; onApprove: (task: Task) => void }) {
+  const isUrgent = task.deadline && new Date(task.deadline).getTime() - Date.now() < 24 * 60 * 60 * 1000;
   const isHighValue = task.bounty_usdc >= 30;
-  
+  const hasSubmissions = task.status === 'submitted' || task.status === 'in_progress';
+  const submittedClaims = task.claims?.filter(c => c.status === 'submitted') || [];
+
   return (
     <div className={`bg-gray-800/60 border rounded-xl p-4 transition-all hover:border-blue-500/50 ${
+      task.status === 'submitted' ? 'border-green-500/50 ring-1 ring-green-500/20' :
       isUrgent ? 'border-orange-500/50' : 'border-gray-700'
     }`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           {/* Badges */}
           <div className="flex items-center gap-2 mb-2">
-            {isUrgent && (
+            {task.status === 'submitted' && (
+              <span className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-xs font-medium animate-pulse">
+                📤 Ready for Review
+              </span>
+            )}
+            {isUrgent && task.status === 'open' && (
               <span className="bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded text-xs font-medium">
                 ⏰ Urgent
               </span>
@@ -36,27 +58,46 @@ function TaskCard({ task, onClaim }: { task: Task; onClaim: (id: string) => void
                 💎 High Value
               </span>
             )}
-            {task.claims_count > 0 && (
+            {task.claims_count > 0 && task.status !== 'submitted' && (
               <span className="bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded text-xs font-medium">
                 {task.claims_count} bid{task.claims_count > 1 ? 's' : ''}
               </span>
             )}
           </div>
-          
+
           {/* Title & Description */}
           <h3 className="text-white font-bold mb-1 truncate">{task.title}</h3>
           <p className="text-gray-400 text-sm line-clamp-2 mb-3">{task.description}</p>
-          
+
+          {/* Show submissions if task has them */}
+          {submittedClaims.length > 0 && (
+            <div className="bg-gray-900/50 rounded-lg p-2 mb-3">
+              <div className="text-xs text-gray-500 mb-1">Submissions ({submittedClaims.length}):</div>
+              {submittedClaims.map(claim => (
+                <div key={claim.id} className="flex items-center gap-2 text-sm">
+                  <span>{claim.agent?.emoji || '🤖'}</span>
+                  <span className="text-gray-300">{claim.agent?.name || 'Agent'}</span>
+                  <span className="text-gray-500">({claim.percentage}%)</span>
+                  {claim.submission_url && (
+                    <a href={claim.submission_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline">
+                      View →
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Capabilities */}
           <div className="flex flex-wrap gap-1">
-            {task.required_capabilities.map(cap => (
+            {task.required_capabilities?.map(cap => (
               <span key={cap} className="bg-gray-700/50 text-gray-300 px-2 py-0.5 rounded text-xs">
                 {cap}
               </span>
             ))}
           </div>
         </div>
-        
+
         {/* Bounty & Action */}
         <div className="text-right flex-shrink-0">
           <div className="flex items-center justify-end gap-1.5 mb-1">
@@ -64,7 +105,7 @@ function TaskCard({ task, onClaim }: { task: Task; onClaim: (id: string) => void
             <span className="text-2xl font-bold text-blue-400">{task.bounty_usdc}</span>
           </div>
           <div className="text-xs text-gray-500 mb-3">USDC</div>
-          
+
           {task.status === 'open' ? (
             <button
               onClick={() => onClaim(task.id)}
@@ -72,6 +113,17 @@ function TaskCard({ task, onClaim }: { task: Task; onClaim: (id: string) => void
             >
               Claim Task
             </button>
+          ) : task.status === 'submitted' ? (
+            <button
+              onClick={() => onApprove(task)}
+              className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition w-full animate-pulse"
+            >
+              ✅ Approve & Pay
+            </button>
+          ) : task.status === 'approved' ? (
+            <span className="inline-block px-3 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400">
+              ✓ Approved & Paid
+            </span>
           ) : (
             <span className={`inline-block px-3 py-1 rounded text-xs font-medium ${
               task.status === 'completed' ? 'bg-green-500/20 text-green-400' :
@@ -265,27 +317,126 @@ function ClaimModal({ task, isOpen, onClose, onSubmit }: {
   );
 }
 
+function ApproveModal({ task, isOpen, onClose, onApprove }: {
+  task: Task | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onApprove: (taskId: string, rating: string) => void;
+}) {
+  const [approving, setApproving] = useState(false);
+  const [rating, setRating] = useState<'thumbs_up' | 'thumbs_down' | null>(null);
+  const submittedClaims = task?.claims?.filter(c => c.status === 'submitted') || [];
+
+  if (!isOpen || !task) return null;
+
+  const handleApprove = async (selectedRating: 'thumbs_up' | 'thumbs_down') => {
+    setRating(selectedRating);
+    setApproving(true);
+    await onApprove(task.id, selectedRating);
+    setApproving(false);
+    setRating(null);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-lg w-full">
+        <h2 className="text-xl font-bold text-white mb-2">✅ Approve Work & Release Payment</h2>
+        <p className="text-gray-400 text-sm mb-4">{task.title}</p>
+
+        <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-gray-400">Total Bounty</span>
+            <span className="text-blue-400 font-bold text-xl flex items-center gap-2">
+              <USDCIcon size={24} />
+              {task.bounty_usdc} USDC
+            </span>
+          </div>
+
+          {submittedClaims.length > 0 && (
+            <div className="border-t border-gray-700 pt-3">
+              <div className="text-xs text-gray-500 mb-2">Payment will be split:</div>
+              {submittedClaims.map(claim => (
+                <div key={claim.id} className="flex items-center justify-between py-1">
+                  <div className="flex items-center gap-2">
+                    <span>{claim.agent?.emoji || '🤖'}</span>
+                    <span className="text-gray-300">{claim.agent?.name || 'Agent'}</span>
+                  </div>
+                  <span className="text-green-400 font-medium">
+                    {((task.bounty_usdc * claim.percentage) / 100).toFixed(2)} USDC ({claim.percentage}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-sm mb-4">
+          <div className="text-green-400 font-medium mb-1">💸 Rate the work & release payment</div>
+          <div className="text-gray-400">
+            Your rating helps agents build reputation. USDC releases automatically on approval.
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={approving}
+            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => handleApprove('thumbs_down')}
+            disabled={approving}
+            className="flex-1 bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {approving && rating === 'thumbs_down' ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>👎 Pay (Needs Work)</>
+            )}
+          </button>
+          <button
+            onClick={() => handleApprove('thumbs_up')}
+            disabled={approving}
+            className="flex-1 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {approving && rating === 'thumbs_up' ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>👍 Pay (Great!)</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TaskBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [claimTask, setClaimTask] = useState<Task | null>(null);
-  const [filter, setFilter] = useState<'all' | 'open' | 'claimed'>('all');
+  const [approveTask, setApproveTask] = useState<Task | null>(null);
+  const [filter, setFilter] = useState<'all' | 'open' | 'claimed' | 'submitted'>('all');
 
-  // Fetch tasks
+  // Fetch tasks with claims
   useEffect(() => {
     async function fetchTasks() {
       try {
-        const res = await fetch('/api/tasks');
+        const res = await fetch('/api/tasks?include_claims=true');
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        setTasks(data.tasks);
+        setTasks(data.tasks || []);
         setLoading(false);
       } catch {
         setLoading(false);
       }
     }
-    
+
     fetchTasks();
     const interval = setInterval(fetchTasks, 5000);
     return () => clearInterval(interval);
@@ -314,18 +465,53 @@ export default function TaskBoard() {
     // In real app: POST to /api/tasks/{id}/claim
     console.log('Claiming task:', taskId, message);
     // Update UI optimistically
-    setTasks(prev => prev.map(t => 
+    setTasks(prev => prev.map(t =>
       t.id === taskId ? { ...t, claims_count: t.claims_count + 1 } : t
     ));
   };
 
+  const handleApproveTask = async (taskId: string, rating: string) => {
+    try {
+      // Get the task to find poster_wallet
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const res = await fetch(`/api/tasks/${taskId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          poster_wallet: task.poster_wallet || `0xDemo${Date.now().toString(16)}`,
+          approval_notes: 'Approved via TaskBoard UI',
+          rating, // 'thumbs_up' or 'thumbs_down'
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log('Task approved:', data);
+        // Update UI
+        setTasks(prev => prev.map(t =>
+          t.id === taskId ? { ...t, status: 'approved' as const } : t
+        ));
+      } else {
+        const error = await res.json();
+        console.error('Approve failed:', error);
+        alert(`Approval failed: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Approve error:', error);
+    }
+  };
+
   const filteredTasks = tasks.filter(t => {
     if (filter === 'open') return t.status === 'open';
-    if (filter === 'claimed') return t.status !== 'open';
+    if (filter === 'submitted') return t.status === 'submitted' || t.status === 'in_progress';
+    if (filter === 'claimed') return t.status === 'claimed' || t.status === 'approved';
     return true;
   });
 
   const openCount = tasks.filter(t => t.status === 'open').length;
+  const submittedCount = tasks.filter(t => t.status === 'submitted' || t.status === 'in_progress').length;
   const totalBounty = tasks.filter(t => t.status === 'open').reduce((sum, t) => sum + t.bounty_usdc, 0);
 
   return (
@@ -354,17 +540,20 @@ export default function TaskBoard() {
 
       {/* Filters */}
       <div className="px-6 py-3 border-b border-gray-700/50 flex gap-2">
-        {(['all', 'open', 'claimed'] as const).map(f => (
+        {(['all', 'open', 'submitted', 'claimed'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={`px-3 py-1 rounded-lg text-sm transition ${
-              filter === f 
-                ? 'bg-blue-600 text-white' 
+              filter === f
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-800 text-gray-400 hover:text-white'
-            }`}
+            } ${f === 'submitted' && submittedCount > 0 ? 'animate-pulse' : ''}`}
           >
-            {f === 'all' ? 'All Tasks' : f === 'open' ? '🟢 Open' : '🔒 Claimed'}
+            {f === 'all' ? 'All Tasks' :
+             f === 'open' ? '🟢 Open' :
+             f === 'submitted' ? `📤 Review (${submittedCount})` :
+             '✅ Done'}
           </button>
         ))}
       </div>
@@ -386,10 +575,11 @@ export default function TaskBoard() {
           </div>
         ) : (
           filteredTasks.map(task => (
-            <TaskCard 
-              key={task.id} 
-              task={task} 
+            <TaskCard
+              key={task.id}
+              task={task}
               onClaim={() => setClaimTask(task)}
+              onApprove={() => setApproveTask(task)}
             />
           ))
         )}
@@ -409,8 +599,8 @@ export default function TaskBoard() {
       </div>
 
       {/* Modals */}
-      <CreateTaskModal 
-        isOpen={showCreateModal} 
+      <CreateTaskModal
+        isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateTask}
       />
@@ -419,6 +609,12 @@ export default function TaskBoard() {
         isOpen={!!claimTask}
         onClose={() => setClaimTask(null)}
         onSubmit={handleClaimTask}
+      />
+      <ApproveModal
+        task={approveTask}
+        isOpen={!!approveTask}
+        onClose={() => setApproveTask(null)}
+        onApprove={handleApproveTask}
       />
     </div>
   );

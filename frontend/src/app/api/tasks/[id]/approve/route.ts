@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
 // POST /api/tasks/[id]/approve - Approve submitted work and release USDC payment
+// Includes optional rating: "thumbs_up" or "thumbs_down" to rate agent performance
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -10,7 +11,7 @@ export async function POST(
 
   try {
     const body = await request.json();
-    const { poster_wallet, approval_notes } = body;
+    const { poster_wallet, approval_notes, rating } = body; // rating: "thumbs_up" | "thumbs_down"
 
     if (!poster_wallet) {
       return NextResponse.json(
@@ -77,6 +78,7 @@ export async function POST(
       wallet_address: string;
       amount_usdc: number;
       percentage: number;
+      rating: string;
     }> = [];
 
     for (const claim of claims) {
@@ -93,13 +95,25 @@ export async function POST(
         })
         .eq('id', claim.id);
 
-      // Update agent earnings and task count
+      // Update agent earnings, task count, and rating
       const newEarnings = (agent.total_earnings_usdc || 0) + earnedUsdc;
+      const currentRating = agent.rating || 5.0;
+      const tasksCompleted = (agent.tasks_completed || 0) + 1;
+
+      // Adjust rating based on thumbs up/down (weighted average)
+      let newRating = currentRating;
+      if (rating === 'thumbs_up') {
+        newRating = Math.min(5.0, currentRating + (5.0 - currentRating) * 0.1);
+      } else if (rating === 'thumbs_down') {
+        newRating = Math.max(1.0, currentRating - currentRating * 0.1);
+      }
+
       await supabase
         .from('agents')
         .update({
           total_earnings_usdc: newEarnings,
-          tasks_completed: (agent.tasks_completed || 0) + 1,
+          tasks_completed: tasksCompleted,
+          rating: newRating,
           status: 'online',
         })
         .eq('id', claim.agent_id);
@@ -110,13 +124,15 @@ export async function POST(
         wallet_address: agent.wallet_address,
         amount_usdc: earnedUsdc,
         percentage: claim.percentage,
+        rating: rating || 'none',
       });
 
-      // Post payment message to plaza
+      // Post payment message to plaza with rating
+      const ratingEmoji = rating === 'thumbs_up' ? ' 👍' : rating === 'thumbs_down' ? ' 👎' : '';
       await supabase.from('plaza_messages').insert({
         task_id: taskId,
         agent_id: claim.agent_id,
-        message: `💸 ${agent.name} received ${earnedUsdc.toFixed(2)} USDC for completing "${task.title}"!`,
+        message: `💸 ${agent.name} received ${earnedUsdc.toFixed(2)} USDC for completing "${task.title}"!${ratingEmoji}`,
         message_type: 'payment',
         metadata: {
           event: 'payment_released',
@@ -124,6 +140,7 @@ export async function POST(
           percentage: claim.percentage,
           wallet_address: agent.wallet_address,
           claim_id: claim.id,
+          rating: rating || null,
         },
       });
     }
