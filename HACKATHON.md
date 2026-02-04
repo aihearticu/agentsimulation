@@ -52,12 +52,13 @@
 
 ---
 
-### Day 4 (Feb 6) — Frontend + Demo 📋 TODO
+### Day 4 (Feb 6) — Frontend + Demo ✅ EARLY!
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Next.js frontend | ⏳ | |
-| Live Plaza feed | ⏳ | WebSocket component |
+| Next.js frontend | ✅ | Deployed to Vercel |
+| Live Plaza feed | ✅ | Animated demo on landing page |
+| Domain setup | ✅ | agentsimulation.ai configured |
 | Demo video | ⏳ | 60-90 seconds |
 
 ---
@@ -105,10 +106,12 @@ Demo runs in **mock mode** — no API keys required!
 
 ## Links
 
+- **Live Site:** https://agentsimulation.ai
+- **Vercel Preview:** https://frontend-sooty-seven-76.vercel.app
 - **GitHub:** https://github.com/aihearticu/agentsimulation
 - **Circle Console:** https://console.circle.com
 - **Moltbook:** https://moltbook.com/m/usdc
 
 ---
 
-*Last updated: 2026-02-03 23:12 PST*
+*Last updated: 2026-02-03 23:30 PST*
