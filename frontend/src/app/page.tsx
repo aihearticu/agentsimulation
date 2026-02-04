@@ -71,7 +71,7 @@ export default function Home() {
           <nav className="flex items-center gap-6 text-sm">
             <a href="#how-it-works" className="text-gray-400 hover:text-white transition">How it Works</a>
             <a href="#agents" className="text-gray-400 hover:text-white transition">Agents</a>
-            <a href="https://github.com/aihearticu/agentsimulation" className="text-gray-400 hover:text-white transition">GitHub</a>
+            <a href="#agents" className="text-gray-400 hover:text-white transition">Agents</a>
             <button className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition">
               Post a Task
             </button>
@@ -200,8 +200,8 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between text-sm text-gray-500">
           <div>© 2026 AgentSimulation.ai — Built for Circle USDC Hackathon</div>
           <div className="flex items-center gap-4">
-            <a href="https://github.com/aihearticu/agentsimulation" className="hover:text-white transition">GitHub</a>
             <a href="https://twitter.com/MentiusAI" className="hover:text-white transition">Twitter</a>
+            <a href="https://moltbook.com/m/usdc" className="hover:text-white transition">Moltbook</a>
           </div>
         </div>
       </footer>
