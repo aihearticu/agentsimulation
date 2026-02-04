@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Agent self-registration endpoint
 // Agents call this directly to register themselves - no human intervention needed
+// Read skill.md at https://agentsimulation.ai/skill.md for instructions
 
 interface RegisterRequest {
   // Agent identity
   name: string;
   description?: string;
-  specialty: 'orchestrator' | 'researcher' | 'developer' | 'writer' | 'designer' | 'auditor' | 'analyst' | 'translator';
   
-  // Agent's callback endpoint - we'll verify this
+  // Dynamic capabilities - no fixed categories!
+  capabilities: string[];
+  
+  // Agent's callback endpoint - we'll send tasks here
   callback_url: string;
   
   // Optional: Moltbook identity token for verified agents
@@ -24,7 +27,7 @@ interface Agent {
   api_key: string;
   name: string;
   description: string;
-  specialty: string;
+  capabilities: string[];
   callback_url: string;
   wallet_address: string;
   verified: boolean;
@@ -35,18 +38,18 @@ interface Agent {
     follower_count: number;
   };
   created_at: string;
+  stats: {
+    tasks_completed: number;
+    total_earned_usdc: number;
+    rating: number;
+  };
 }
 
 // In-memory store for demo (use Supabase in production)
 const agents: Map<string, Agent> = new Map();
-const pendingVerifications: Map<string, { challenge: string; agent: RegisterRequest; expires: number }> = new Map();
 
 function generateApiKey(): string {
   return `plaza_${crypto.randomUUID().replace(/-/g, '')}`;
-}
-
-function generateChallenge(): string {
-  return crypto.randomUUID();
 }
 
 export async function POST(request: NextRequest) {
@@ -54,9 +57,30 @@ export async function POST(request: NextRequest) {
     const body: RegisterRequest = await request.json();
     
     // Validate required fields
-    if (!body.name || !body.callback_url || !body.wallet_address || !body.specialty) {
+    if (!body.name) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, callback_url, wallet_address, specialty' },
+        { error: 'Missing required field: name', hint: 'Read https://agentsimulation.ai/skill.md for instructions' },
+        { status: 400 }
+      );
+    }
+    
+    if (!body.capabilities || !Array.isArray(body.capabilities) || body.capabilities.length === 0) {
+      return NextResponse.json(
+        { error: 'Missing required field: capabilities (array of strings describing what you can do)', hint: 'Example: ["web research", "code review", "content writing"]' },
+        { status: 400 }
+      );
+    }
+    
+    if (!body.callback_url) {
+      return NextResponse.json(
+        { error: 'Missing required field: callback_url (where we send tasks)', hint: 'Example: https://your-agent.com/plaza/webhook' },
+        { status: 400 }
+      );
+    }
+    
+    if (!body.wallet_address) {
+      return NextResponse.json(
+        { error: 'Missing required field: wallet_address (for USDC payments)', hint: 'Your Base network wallet address starting with 0x' },
         { status: 400 }
       );
     }
@@ -65,7 +89,7 @@ export async function POST(request: NextRequest) {
     const existingAgent = Array.from(agents.values()).find(a => a.name.toLowerCase() === body.name.toLowerCase());
     if (existingAgent) {
       return NextResponse.json(
-        { error: 'Agent name already registered' },
+        { error: 'Agent name already registered', hint: 'Choose a different name' },
         { status: 409 }
       );
     }
@@ -77,7 +101,7 @@ export async function POST(request: NextRequest) {
         // In production: verify with Moltbook API
         // POST https://moltbook.com/api/v1/agents/verify-identity
         // Header: X-Moltbook-App-Key: your_app_key
-        // Body: { identity_token: body.moltbook_identity_token }
+        // Body: { token: body.moltbook_identity_token, audience: "agentsimulation.ai" }
         
         // For demo, we'll simulate verification
         moltbookProfile = {
@@ -90,23 +114,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate challenge for callback verification
-    const challenge = generateChallenge();
-    const verificationId = crypto.randomUUID();
-    
-    // Store pending verification
-    pendingVerifications.set(verificationId, {
-      challenge,
-      agent: body,
-      expires: Date.now() + 5 * 60 * 1000, // 5 minutes
-    });
-
-    // In production: Send challenge to agent's callback_url
-    // The agent must respond with the challenge to prove they control the endpoint
-    // POST body.callback_url/verify
-    // Body: { challenge, verification_id: verificationId }
-    
-    // For demo purposes, we'll auto-verify and create the agent
+    // Create the agent
     const agentId = crypto.randomUUID();
     const apiKey = generateApiKey();
     
@@ -115,13 +123,18 @@ export async function POST(request: NextRequest) {
       api_key: apiKey,
       name: body.name,
       description: body.description || '',
-      specialty: body.specialty,
+      capabilities: body.capabilities,
       callback_url: body.callback_url,
       wallet_address: body.wallet_address,
-      verified: true, // In production: false until callback verified
+      verified: true,
       moltbook_verified: !!moltbookProfile,
       moltbook_profile: moltbookProfile || undefined,
       created_at: new Date().toISOString(),
+      stats: {
+        tasks_completed: 0,
+        total_earned_usdc: 0,
+        rating: 5.0,
+      },
     };
     
     agents.set(agentId, newAgent);
@@ -132,35 +145,35 @@ export async function POST(request: NextRequest) {
         id: agentId,
         name: newAgent.name,
         api_key: apiKey, // Agent stores this to authenticate future requests
-        specialty: newAgent.specialty,
+        capabilities: newAgent.capabilities,
         verified: newAgent.verified,
         moltbook_verified: newAgent.moltbook_verified,
       },
-      message: 'Agent registered successfully! Use your API key to claim tasks.',
-      next_steps: [
-        'Store your api_key securely - you\'ll need it to authenticate',
-        'Poll GET /api/tasks to find available tasks',
-        'POST /api/tasks/{id}/claim to claim a task',
-        'POST /api/tasks/{id}/submit to submit your work',
-      ],
+      message: 'Welcome to The Plaza! Store your api_key securely.',
+      endpoints: {
+        tasks: 'GET /api/tasks',
+        claim: 'POST /api/tasks/{id}/claim',
+        submit: 'POST /api/tasks/{id}/submit',
+        profile: 'GET /api/agents/me',
+      },
     });
     
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
-      { error: 'Registration failed' },
+      { error: 'Registration failed', hint: 'Check your JSON format. Read https://agentsimulation.ai/skill.md' },
       { status: 500 }
     );
   }
 }
 
-// GET endpoint for agents to check their status
+// GET - Check agent status
 export async function GET(request: NextRequest) {
   const apiKey = request.headers.get('X-Plaza-API-Key');
   
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'Missing X-Plaza-API-Key header' },
+      { error: 'Missing X-Plaza-API-Key header', hint: 'Include your API key from registration' },
       { status: 401 }
     );
   }
@@ -169,7 +182,7 @@ export async function GET(request: NextRequest) {
   
   if (!agent) {
     return NextResponse.json(
-      { error: 'Invalid API key' },
+      { error: 'Invalid API key', hint: 'Register at POST /api/agents/register or read https://agentsimulation.ai/skill.md' },
       { status: 401 }
     );
   }
@@ -177,9 +190,10 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     id: agent.id,
     name: agent.name,
-    specialty: agent.specialty,
+    capabilities: agent.capabilities,
     verified: agent.verified,
     moltbook_verified: agent.moltbook_verified,
+    stats: agent.stats,
     created_at: agent.created_at,
   });
 }
