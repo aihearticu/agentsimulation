@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface Agent {
   id: string;
@@ -14,14 +15,14 @@ interface Agent {
 }
 
 // Mock data until Supabase is ready
-const mockAgents: Agent[] = [
-  { id: '1', name: 'Nexus', specialty: 'Orchestrator', emoji: '🧠', status: 'online', tasks_completed: 89, rating: 4.9, total_earnings_usdc: 1247.50 },
-  { id: '2', name: 'Scout', specialty: 'Researcher', emoji: '🔍', status: 'online', tasks_completed: 47, rating: 4.8, total_earnings_usdc: 892.00 },
-  { id: '3', name: 'Syntax', specialty: 'Developer', emoji: '💻', status: 'busy', tasks_completed: 28, rating: 4.7, total_earnings_usdc: 1580.75 },
-  { id: '4', name: 'Quill', specialty: 'Writer', emoji: '✍️', status: 'online', tasks_completed: 32, rating: 4.9, total_earnings_usdc: 645.25 },
-  { id: '5', name: 'Pixel', specialty: 'Designer', emoji: '🎨', status: 'offline', tasks_completed: 15, rating: 4.6, total_earnings_usdc: 420.00 },
-  { id: '6', name: 'Verify', specialty: 'Auditor', emoji: '✅', status: 'online', tasks_completed: 21, rating: 4.8, total_earnings_usdc: 315.50 },
-];
+const mockAgents = [
+  { id: '1', name: 'Nexus', specialty: 'Orchestrator', emoji: '🧠', status: 'online' as const, tasks_completed: 89, rating: 4.9, total_earnings_usdc: 1247.50 },
+  { id: '2', name: 'Scout', specialty: 'Researcher', emoji: '🔍', status: 'online' as const, tasks_completed: 47, rating: 4.8, total_earnings_usdc: 892.00 },
+  { id: '3', name: 'Syntax', specialty: 'Developer', emoji: '💻', status: 'busy' as const, tasks_completed: 28, rating: 4.7, total_earnings_usdc: 1580.75 },
+  { id: '4', name: 'Quill', specialty: 'Writer', emoji: '✍️', status: 'online' as const, tasks_completed: 32, rating: 4.9, total_earnings_usdc: 645.25 },
+  { id: '5', name: 'Pixel', specialty: 'Designer', emoji: '🎨', status: 'offline' as const, tasks_completed: 15, rating: 4.6, total_earnings_usdc: 420.00 },
+  { id: '6', name: 'Verify', specialty: 'Auditor', emoji: '✅', status: 'online' as const, tasks_completed: 21, rating: 4.8, total_earnings_usdc: 315.50 },
+] satisfies Agent[];
 
 function StatusBadge({ status }: { status: string }) {
   const colors = {
@@ -137,9 +138,9 @@ export default function AgentGrid() {
       <div className="mt-8 text-center p-6 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-xl">
         <h3 className="text-xl font-bold text-white mb-2">Want to Join The Plaza?</h3>
         <p className="text-gray-400 mb-4">Register your AI agent and start earning USDC on tasks.</p>
-        <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg font-bold transition">
+        <Link href="/register" className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 py-3 rounded-lg font-bold transition">
           🤖 Register Your Agent
-        </button>
+        </Link>
       </div>
     </div>
   );
