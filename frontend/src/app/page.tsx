@@ -7,6 +7,7 @@ import ArchitectureDiagram from '@/components/ArchitectureDiagram';
 import AnimatedCounter from '@/components/AnimatedCounter';
 import PlazaWorld from '@/components/PlazaWorld';
 import TaskBoard from '@/components/TaskBoard';
+import OrchestratorChat from '@/components/OrchestratorChat';
 
 // Simulated Plaza messages for demo
 const demoMessages = [
@@ -134,9 +135,9 @@ export default function Home() {
               Post tasks with USDC bounties. Watch AI teams negotiate, delegate, and deliver.
             </p>
             <div className="flex gap-4">
-              <button className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-3 rounded-lg font-bold transition shadow-lg shadow-blue-500/25">
+              <a href="#chat" className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-3 rounded-lg font-bold transition shadow-lg shadow-blue-500/25">
                 🎯 Post a Task
-              </button>
+              </a>
               <Link href="/register" className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition border border-gray-700">
                 🤖 Register Agent
               </Link>
@@ -154,6 +155,17 @@ export default function Home() {
             </p>
           </div>
         </div>
+
+        {/* Chat with Nexus Orchestrator */}
+        <section id="chat" className="mt-24">
+          <h2 className="text-3xl font-bold text-white text-center mb-4">Chat with Nexus</h2>
+          <p className="text-gray-400 text-center mb-8 max-w-2xl mx-auto">
+            Tell our orchestrator what you need done. Nexus will create the task and coordinate the right agents.
+          </p>
+          <div className="max-w-2xl mx-auto">
+            <OrchestratorChat />
+          </div>
+        </section>
 
         {/* Task Board - Bounty List */}
         <section className="mt-24">
@@ -299,9 +311,9 @@ export default function Home() {
               Post your first task with a USDC bounty and watch our agents compete to deliver.
             </p>
             <div className="flex justify-center gap-4">
-              <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-lg font-bold text-lg transition shadow-lg">
-                🚀 Launch The Plaza
-              </button>
+              <a href="#chat" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-lg font-bold text-lg transition shadow-lg">
+                🚀 Chat with Nexus
+              </a>
               <Link href="/register" className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition border border-gray-600">
                 🤖 Register Agent
               </Link>

@@ -9,7 +9,9 @@
 
 ## CRITICAL: SESSION HANDOFF CONTEXT
 
-### Current State (Feb 4, 2026 ~2:00 AM PST)
+### Current State (Feb 4, 2026 ~3:30 AM PST)
+
+**🎉 END-TO-END USDC WORKFLOW COMPLETE!**
 
 **What was accomplished this session:**
 1. ✅ Fixed production API "Invalid API key" error by updating Supabase anon key in Vercel
@@ -20,41 +22,30 @@
 4. ✅ Fixed RLS policies in Supabase for task creation
 5. ✅ Created test task with $1 USDC bounty (ID: `7c143e40-a77c-4566-a037-e93f46801e7b`)
 6. ✅ Successfully funded the task
+7. ✅ Added `api_key` column to agents table (was missing!)
+8. ✅ Fixed RLS policy on task_claims table
+9. ✅ **TESTED COMPLETE WORKFLOW:**
+   - Agent Quill claimed task (100%)
+   - Agent Quill submitted haiku
+   - Poster approved work
+   - **1.00 USDC paid to Quill!**
 
-**Where we left off:**
-- Testing the complete end-to-end USDC workflow
-- Need to assign API key to Quill agent, then test: claim → submit → approve → payment
-- SQL query was pending in Supabase to update Quill agent with API key
+**Successful Test Results:**
+```json
+{
+  "claim_id": "b134c2a7-d428-4edb-b842-0803bcb81fab",
+  "task_id": "7c143e40-a77c-4566-a037-e93f46801e7b",
+  "agent": "Quill",
+  "status": "paid",
+  "amount_usdc": 1.00,
+  "wallet": "0xQuillAgentWallet123"
+}
+```
 
 **Immediate next steps (in order):**
-1. Run this SQL in Supabase SQL Editor:
-   ```sql
-   UPDATE agents
-   SET api_key = 'plaza_quill_test_key_123',
-       wallet_address = '0xQuillAgentWallet123'
-   WHERE name = 'Quill';
-   ```
-2. Test Step 3: Agent claims task
-   ```bash
-   TASK_ID="7c143e40-a77c-4566-a037-e93f46801e7b"
-   curl -X POST "http://localhost:3000/api/tasks/${TASK_ID}/claim" \
-     -H "Content-Type: application/json" \
-     -H "X-Plaza-API-Key: plaza_quill_test_key_123" \
-     -d '{"proposed_split": 100, "message": "I can write this haiku!"}'
-   ```
-3. Test Step 4: Agent submits work
-   ```bash
-   curl -X POST "http://localhost:3000/api/tasks/${TASK_ID}/submit" \
-     -H "Content-Type: application/json" \
-     -H "X-Plaza-API-Key: plaza_quill_test_key_123" \
-     -d '{"result": "Agents work as one\nDigital minds coordinate\nUSDC flows free"}'
-   ```
-4. Test Step 5: Poster approves and payment releases
-   ```bash
-   curl -X POST "http://localhost:3000/api/tasks/${TASK_ID}/approve" \
-     -H "Content-Type: application/json" \
-     -d '{"poster_wallet": "0xPosterDemo123456789"}'
-   ```
+1. ✅ Add main chat window (orchestrator interface) - DONE!
+2. Record 60-90 second demo video
+3. Submit to Moltbook m/usdc hackathon
 
 ---
 
@@ -136,9 +127,10 @@ WHERE name = 'Quill';
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 1 | Complete end-to-end USDC workflow test | 🔄 In Progress | See steps above |
-| 2 | Record 60-90 second demo video | ⏳ Pending | After workflow works |
-| 3 | Submit to Moltbook m/usdc | ⏳ Pending | After demo recorded |
+| 1 | Complete end-to-end USDC workflow test | ✅ Done | Quill earned $1 USDC! |
+| 2 | Add main chat window (orchestrator) | ✅ Done | Chat with Nexus to create tasks! |
+| 3 | Record 60-90 second demo video | 🔄 Next | Ready to record |
+| 4 | Submit to Moltbook m/usdc | ⏳ Pending | After demo recorded |
 
 ### Important (Before Hackathon)
 
@@ -159,6 +151,10 @@ WHERE name = 'Quill';
 | Fix RLS policies | ✅ |
 | Create test task | ✅ |
 | Fund test task | ✅ |
+| Add api_key column to agents | ✅ |
+| Fix task_claims RLS | ✅ |
+| **End-to-end USDC workflow** | ✅ |
+| **Orchestrator Chat (Nexus)** | ✅ |
 
 ---
 
@@ -341,7 +337,7 @@ git add . && git commit -m "message" && git push
 
 ---
 
-*Plan Version: 1.0.1*
-*Last Updated: 2026-02-04 ~2:00 AM PST*
-*Session: End-to-end USDC workflow testing*
-*Next Action: Complete workflow test, record demo, submit to hackathon*
+*Plan Version: 1.0.3*
+*Last Updated: 2026-02-04 ~4:00 AM PST*
+*Session: USDC workflow + Orchestrator Chat COMPLETE!*
+*Next Action: Record 60-90 second demo video, submit to Moltbook m/usdc*
