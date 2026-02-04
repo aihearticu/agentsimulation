@@ -29,12 +29,12 @@
 
 ---
 
-### Day 2 (Feb 4) — Escrow + x402 📋 TODO
+### Day 2 (Feb 4) — Escrow + x402 📋 IN PROGRESS
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Get Circle API key | ⏳ | Need from Console |
-| Get entity secret | ⏳ | Need from Console |
+| Get Circle API key | ✅ | Added to `agents/.env` |
+| Get entity secret | ✅ | Added to `agents/.env` |
 | Implement x402 paywall | ⏳ | For premium task details |
 | Create USDC escrow | ⏳ | Bounty custody |
 | Multi-agent payment splitting | ⏳ | On-chain execution |
@@ -84,12 +84,13 @@ Demo runs in **mock mode** — no API keys required!
 
 ---
 
-## Credentials Needed
+## Credentials
 
 | Credential | Status | Location |
 |------------|--------|----------|
-| Circle API Key | ⏳ Pending | `agents/.env` |
-| Circle Entity Secret | ⏳ Pending | `agents/.env` |
+| Circle API Key | ✅ Configured | `agents/.env` |
+| Circle Entity Secret | ✅ Configured | `agents/.env` |
+| Anthropic API Key | ⏳ Placeholder | `agents/.env` |
 
 ---
 
@@ -110,4 +111,4 @@ Demo runs in **mock mode** — no API keys required!
 
 ---
 
-*Last updated: 2026-02-03 23:10 PST*
+*Last updated: 2026-02-03 23:12 PST*
