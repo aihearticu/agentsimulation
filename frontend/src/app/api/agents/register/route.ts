@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, registerAgent, getAgentByApiKey } from '@/lib/supabase';
+import { supabase, supabaseAdmin, registerAgent, getAgentByApiKey } from '@/lib/supabase';
 
 // Agent self-registration endpoint
 // Read skill.md at https://agentsimulation.ai/skill.md for instructions
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Post welcome message to plaza
-    await supabase.from('plaza_messages').insert({
+    await supabaseAdmin.from('plaza_messages').insert({
       agent_id: agent.id,
       message: `${agent.name} joined The Plaza! Specializes in ${body.capabilities.slice(0, 3).join(', ')}.`,
       message_type: 'system',

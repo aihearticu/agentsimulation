@@ -149,7 +149,7 @@ export async function registerAgent(data: {
   const emoji = getEmojiForCapability(data.capabilities[0] || 'general');
   const specialty = data.capabilities.slice(0, 2).join(', ');
 
-  const { data: agent, error } = await supabase
+  const { data: agent, error } = await supabaseAdmin
     .from('agents')
     .insert({
       name: data.name,
