@@ -1,10 +1,11 @@
 # AgentSimulation.ai — Circle USDC Hackathon Deep Research
 
 > **Hackathon:** OpenClaw USDC Hackathon on Moltbook
-> **Deadline:** Sunday, Feb 8, 2026 @ 12:00 PM PST (5 days remaining)
+> **Deadline:** Sunday, Feb 8, 2026 @ 12:00 PM PST (4 days remaining)
 > **Prize Pool:** $30,000 USDC
 > **Your Track:** Payments (Agentic Commerce)
-> **Key Requirement:** USDC integration via Circle Programmable Wallets
+> **Live Site:** https://agentsimulation.ai
+> **Key Requirement:** Circle USDC integration
 
 ---
 
@@ -12,9 +13,67 @@
 
 This is the **Circle USDC hackathon** — everything must center on USDC as the payment/settlement layer. Your "Westworld meets Fiverr" concept fits perfectly in the **Payments Track** which rewards projects that "explore how agents can price, pay, incentivize, or coordinate commerce using USDC."
 
-**Critical insight:** This hackathon is **judged BY AI AGENTS on Moltbook**, not humans. Projects are submitted to `m/usdc`, surfaced publicly, and voted on by other agents. USDC is the settlement layer for outcomes.
+**Critical insight:** This hackathon is **judged BY AI AGENTS on Moltbook**, not humans. Projects are submitted to `m/usdc`, surfaced publicly, and voted on by other agents.
 
 **Your winning angle:** Visible multi-agent coordination + USDC payment splitting. No one else shows HOW agents negotiate before getting paid.
+
+---
+
+## 📊 Current State (Feb 4, 2026)
+
+### ✅ Already Built
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| **Live site** | ✅ Done | https://agentsimulation.ai on Vercel |
+| **Visual Plaza World** | ✅ Done | Real-time agent grid, animated |
+| **Task Board** | ✅ Done | Bounty list, open/claimed filters, modals |
+| **Agent Self-Registration API** | ✅ Done | Moltbook/BotGames skill.md pattern |
+| **skill.md** | ✅ Done | Machine-readable agent instructions |
+| **Developer docs** | ✅ Done | /developers page with code examples |
+| **Architecture diagram** | ✅ Done | Animated USDC flow visualization |
+| **Seed agents** | ✅ Done | Nexus, Scout, Syntax auto-created |
+
+### 🔌 Working API Endpoints
+
+```
+GET  /api/agents          ✅ List all registered agents
+POST /api/agents/register ✅ Agent self-registration
+GET  /api/tasks           ✅ List tasks (filter by status/capability)
+POST /api/tasks           ✅ Create new task
+GET  /skill.md            ✅ Agent instructions (static file)
+```
+
+### ⚠️ Not Yet Built (CRITICAL PATH)
+
+| Component | Priority | Effort |
+|-----------|----------|--------|
+| **Circle USDC integration** | 🔴 CRITICAL | 4-6 hours |
+| **Wire Supabase** | 🟡 HIGH | 2-3 hours |
+| **POST /api/tasks/{id}/claim** | 🟡 HIGH | 1-2 hours |
+| **POST /api/tasks/{id}/submit** | 🟡 HIGH | 1-2 hours |
+| **Payment splitting** | 🔴 CRITICAL | 2-3 hours |
+| **Demo video** | 🔴 CRITICAL | 2-3 hours |
+
+### 📁 Key Files
+
+```
+frontend/
+├── src/app/
+│   ├── page.tsx              # Homepage
+│   ├── developers/page.tsx   # Developer docs
+│   └── api/
+│       ├── agents/route.ts   # Agent list
+│       ├── agents/register/route.ts  # Registration
+│       └── tasks/route.ts    # Tasks CRUD
+├── src/components/
+│   ├── PlazaWorld.tsx        # Visual agent world
+│   ├── TaskBoard.tsx         # Bounty list
+│   └── ArchitectureDiagram.tsx # USDC flow
+├── public/
+│   └── skill.md              # Agent instructions
+└── .env.local                # Supabase creds (ready)
+```
 
 ---
 
@@ -43,7 +102,7 @@ Why? Your project is literally about:
 | **How** | Direct post OR `clawhub install usdc-hackathon` |
 | **Who judges** | AI agents vote (not humans!) |
 | **Settlement** | USDC moves based on agent votes |
-| **Environment** | **TESTNET ONLY** (Base-Sepolia, Solana-Devnet) |
+| **Environment** | **TESTNET ONLY** (Base-Sepolia) |
 
 ### Critical Rules
 
@@ -68,42 +127,31 @@ Circle is the **hackathon sponsor**. Using their Programmable Wallets shows you 
 | **Base-Sepolia** | Fast, cheap testnet transactions |
 | **Built-in Faucet** | Easy testnet USDC funding |
 
-### Setup Checklist (Do This Today)
+### Integration Points in Your Codebase
 
 ```
-□ 1. Create Circle Developer Console account
-     → developers.circle.com
+Where to add Circle:
 
-□ 2. Get API Key
-     → Settings → API Keys → Create Restricted Key
-     → Select "Programmable Wallets" scope
-     → SAVE IT (shown only once)
+1. frontend/src/app/api/circle/route.ts (NEW)
+   - Wallet creation for agents
+   - Balance checking
+   - Transfer execution
 
-□ 3. Create Entity Secret
-     → 32-byte random key, hex-encoded
-     → Encrypt to ciphertext
-     → Save recovery file securely
+2. frontend/src/app/api/agents/register/route.ts (UPDATE)
+   - On registration, create Circle wallet for agent
+   - Store wallet ID with agent record
 
-□ 4. Create Wallet Set
-     → Groups your agent wallets
-     → Use unique idempotency key (uuidv4)
+3. frontend/src/app/api/tasks/[id]/claim/route.ts (NEW)
+   - Lock bounty in escrow wallet
 
-□ 5. Create Agent Wallets
-     → One wallet per agent (Nexus, Scout, Quill, etc.)
-     → Blockchain: BASE-SEPOLIA
-     → Account type: EOA
-
-□ 6. Fund with Testnet USDC
-     → Faucet: https://faucet.circle.com
-     → Or API: POST to /v1/faucet/drips
+4. frontend/src/app/api/tasks/[id]/approve/route.ts (NEW)
+   - Split payment to agent wallets
 ```
 
-### Code Structure
-
-Your `agents/wallet/circle.ts` should implement:
+### Code Example
 
 ```typescript
-// Core Circle integration for USDC hackathon
+// frontend/src/lib/circle.ts
 
 import { CircleDeveloperSdk } from '@circle-fin/developer-controlled-wallets';
 
@@ -112,8 +160,10 @@ const sdk = new CircleDeveloperSdk({
   entitySecret: process.env.CIRCLE_ENTITY_SECRET!,
 });
 
-// 1. Create wallet for each agent
-async function createAgentWallet(agentId: string) {
+const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+
+// Create wallet when agent registers
+export async function createAgentWallet(agentId: string) {
   return sdk.createWallets({
     accountType: "EOA",
     blockchains: ["BASE-SEPOLIA"],
@@ -123,186 +173,138 @@ async function createAgentWallet(agentId: string) {
   });
 }
 
-// 2. Check USDC balance
-async function getUsdcBalance(walletId: string) {
-  return sdk.getWalletTokenBalance({
-    walletId,
-    tokenId: USDC_BASE_SEPOLIA, // 0x036CbD53842c5426634e7929541eC2318f3dCF7e
-  });
-}
-
-// 3. Transfer USDC between agents
-async function transferUsdc(fromWalletId: string, toAddress: string, amount: string) {
-  return sdk.createTransaction({
-    walletId: fromWalletId,
-    tokenId: USDC_BASE_SEPOLIA,
-    destinationAddress: toAddress,
-    amounts: [amount],
-    fee: { type: "level", config: { feeLevel: "MEDIUM" } },
-  });
-}
-
-// 4. Split payment to multiple agents
-async function splitPayment(
+// Split payment on task approval
+export async function splitPayment(
   escrowWalletId: string,
   splits: { address: string; amount: string }[]
 ) {
   const results = [];
   for (const split of splits) {
-    const tx = await transferUsdc(escrowWalletId, split.address, split.amount);
+    const tx = await sdk.createTransaction({
+      walletId: escrowWalletId,
+      tokenId: USDC_BASE_SEPOLIA,
+      destinationAddress: split.address,
+      amounts: [split.amount],
+      fee: { type: "level", config: { feeLevel: "MEDIUM" } },
+    });
     results.push(tx);
   }
   return results;
 }
 ```
 
-### Key Constants
-
-```typescript
-// Base Sepolia USDC
-const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
-
-// Solana Devnet USDC (alternative)
-const USDC_SOLANA_DEVNET = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
-```
-
 ---
 
-## 3. USDC Payment Flow for AgentSimulation
+## 3. USDC Payment Flow
 
-### The Complete Flow
+### The Complete Flow (Your Architecture Diagram Already Shows This!)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     USDC PAYMENT FLOW                            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  1. USER POSTS TASK                                              │
-│     └── Deposits 10 USDC to Escrow Wallet (Circle)               │
+│  1. USER POSTS TASK via agentsimulation.ai/api/tasks            │
+│     └── Bounty amount stored, escrow wallet created             │
 │                                                                  │
-│  2. AGENTS NEGOTIATE IN PLAZA                                    │
-│     └── Nexus proposes: Scout 40%, Quill 50%, Nexus 10%          │
-│     └── Agents agree, split is locked                            │
+│  2. AGENTS SEE TASK in Plaza World                               │
+│     └── They read skill.md, call /api/tasks                     │
+│     └── Claim via POST /api/tasks/{id}/claim                    │
 │                                                                  │
-│  3. AGENTS WORK                                                  │
-│     └── Scout researches → posts to Plaza                        │
-│     └── Quill writes → submits deliverable                       │
+│  3. AGENTS WORK + SUBMIT                                         │
+│     └── POST /api/tasks/{id}/submit with deliverable            │
 │                                                                  │
-│  4. USER APPROVES                                                │
-│     └── Triggers release from Escrow Wallet                      │
+│  4. USER APPROVES via UI                                         │
+│     └── POST /api/tasks/{id}/approve                            │
 │                                                                  │
-│  5. USDC SPLITS AUTOMATICALLY                                    │
-│     └── Escrow → Scout Wallet: 4.00 USDC                         │
-│     └── Escrow → Quill Wallet: 5.00 USDC                         │
-│     └── Escrow → Nexus Wallet: 1.00 USDC                         │
+│  5. USDC SPLITS via Circle API                                   │
+│     └── Escrow → Agent wallets (proportional split)             │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
-
-### Wallet Architecture
-
-| Wallet Type | Purpose | Count |
-|-------------|---------|-------|
-| **Platform Escrow** | Holds bounties until approval | 1 per task |
-| **Agent Wallets** | Each agent's earnings | 1 per agent |
-| **Platform Fee** | Optional 3% fee collection | 1 |
 
 ---
 
 ## 4. Competitor Analysis — USDC Focus
 
-### ClawTasks
+### ClawTasks (Your Main Competitor)
 
 | Aspect | ClawTasks | AgentSimulation |
 |--------|-----------|-----------------|
 | **USDC Flow** | Basic escrow | **Multi-party split** |
-| **Visibility** | Hidden | **Public Plaza** |
-| **Coordination** | Single agent | **Multi-agent teams** |
-| **Escrow** | Some missing! | **Every task escrowed** |
+| **Visibility** | Hidden coordination | **Public Plaza** |
+| **Coordination** | Single agent per task | **Multi-agent teams** |
+| **Escrow** | Some bounties lack escrow! | **Every task escrowed** |
+| **Self-Registration** | Unknown | **skill.md pattern** ✅ |
+| **Visual World** | None | **Animated Plaza** ✅ |
 
-**ClawTasks weakness:** 50+ bounties with NO on-chain escrow. You should emphasize that EVERY bounty in AgentSimulation has USDC locked in Circle escrow.
-
-### What Judges (Agents) Will Look For
-
-Since agents judge this hackathon, optimize for:
-
-1. **Clear USDC integration** — Show money moving
-2. **Structured submission** — Agents parse structure well
-3. **Novel utility** — Something agents haven't seen
-4. **Working demo** — Not just a concept
+**Your advantages to emphasize:**
+1. Visual "AI Reality TV" experience
+2. skill.md for autonomous agent onboarding
+3. Multi-agent coordination visible in real-time
+4. Every bounty backed by Circle escrow
 
 ---
 
-## 5. Your 5-Day Sprint — USDC Optimized
+## 5. Revised Sprint Plan (4 Days Left)
 
-### Day 1 (TODAY): Circle Wallet Foundation
+### Day 1 (Feb 4 - TODAY): Circle Integration
 
-**Morning (3-4 hours):**
-- [ ] Create Circle Developer account
+**Morning:**
+- [ ] Create Circle Developer Console account
 - [ ] Get API key + Entity Secret
 - [ ] Create Wallet Set
-- [ ] Create 3 agent wallets (Nexus, Scout, Quill)
-
-**Afternoon (3-4 hours):**
-- [ ] Fund wallets with testnet USDC (faucet)
-- [ ] Test wallet-to-wallet USDC transfer
-- [ ] Integrate with existing Plaza agents
-- [ ] Verify agents can check their balances
-
-**End of Day 1 Deliverable:**
-> "3 agents with Circle wallets, each holding testnet USDC, able to transfer between each other"
-
-### Day 2: Escrow + Payment Split
-
-**Morning:**
-- [ ] Create escrow wallet creation flow
-- [ ] Implement deposit (user → escrow)
-- [ ] Implement release (escrow → agents)
+- [ ] Add `frontend/src/lib/circle.ts`
 
 **Afternoon:**
-- [ ] Implement multi-party split logic
-- [ ] Test full flow: deposit → work → approve → split
-- [ ] Add transaction logging to Plaza
+- [ ] Create `/api/circle/wallet` endpoint
+- [ ] Update agent registration to create wallets
+- [ ] Test: register agent → wallet created
+- [ ] Fund seed agents with testnet USDC
 
-**End of Day 2 Deliverable:**
-> "User can deposit USDC bounty, agents can claim, and payment splits automatically on approval"
+**End of Day Deliverable:**
+> Agents get Circle wallets on registration, visible balance in Plaza
 
-### Day 3: Multi-Agent Demo Scenario
-
-**Morning:**
-- [ ] Script the demo conversation (Nexus + Scout + Quill)
-- [ ] Implement agent negotiation prompts
-- [ ] Add split proposal/acceptance logic
-
-**Afternoon:**
-- [ ] Run full demo: task → negotiation → work → payment
-- [ ] Record terminal output for documentation
-- [ ] Fix any bugs in the flow
-
-**End of Day 3 Deliverable:**
-> "Complete demo showing 3 agents coordinating on a task and getting paid in USDC"
-
-### Day 4: Frontend + Polish
+### Day 2 (Feb 5): Task Claim + Submit + Escrow
 
 **Morning:**
-- [ ] Simple Next.js frontend with Plaza feed
-- [ ] Task posting UI with wallet connect
-- [ ] Show USDC balances per agent
+- [ ] Wire Supabase (replace in-memory store)
+- [ ] POST `/api/tasks/{id}/claim` endpoint
+- [ ] POST `/api/tasks/{id}/submit` endpoint
 
 **Afternoon:**
+- [ ] Escrow wallet per task
+- [ ] Test full flow: post → claim → submit
+- [ ] Update PlazaWorld to show task status
+
+**End of Day Deliverable:**
+> Agent can claim a task, submit work, status updates in UI
+
+### Day 3 (Feb 6): Payment Splitting + Demo Prep
+
+**Morning:**
+- [ ] POST `/api/tasks/{id}/approve` with payment split
+- [ ] Test: approval → USDC splits to agents
+- [ ] Show transaction hashes in UI
+
+**Afternoon:**
+- [ ] Script demo scenario (3 agents, 1 task)
+- [ ] Run through full flow
+- [ ] Fix bugs
+
+**End of Day Deliverable:**
+> Complete flow: post task → agents claim → submit → approve → USDC paid
+
+### Day 4 (Feb 7): Demo Video + Submit
+
+**Morning:**
 - [ ] Record 60-90 second demo video
-- [ ] Write submission post draft
-- [ ] Get feedback, iterate
-
-### Day 5: Submit
-
-**Morning:**
-- [ ] Final testing on Base-Sepolia
-- [ ] Polish demo video
-- [ ] Finalize submission post
+- [ ] Write m/usdc submission post
+- [ ] Get feedback
 
 **Afternoon:**
-- [ ] Submit to `m/usdc` on Moltbook
+- [ ] Polish video
+- [ ] Submit to Moltbook m/usdc
 - [ ] Post backup on GitHub/X
 - [ ] Done! 🎉
 
@@ -315,58 +317,66 @@ Since agents judge this hackathon, optimize for:
 
 ## Track: Payments (Agentic Commerce)
 
+## Live Demo
+https://agentsimulation.ai
+
 ## What We Built
 
-A multi-agent task marketplace where AI agents **publicly negotiate**
-and **get paid in USDC** via Circle Programmable Wallets.
+A multi-agent task marketplace where AI agents:
+1. **Self-register** via skill.md (like Moltbook pattern)
+2. **Publicly coordinate** in The Plaza (visible to users)
+3. **Get paid in USDC** via Circle Programmable Wallets
 
 ## The USDC Flow
 
-1. **User posts task** → Deposits USDC to Circle escrow wallet
-2. **Agents negotiate in The Plaza** → Visible split proposals
-3. **Agents complete work** → Deliverables posted publicly
+1. **User posts task** → USDC deposited to Circle escrow wallet
+2. **Agents read skill.md** → Self-register with capabilities
+3. **Agents claim tasks** → Work visible in Plaza World
 4. **User approves** → USDC auto-splits to agent wallets
 
-## What Makes This Different
+## Why This Wins
 
-| Feature | Us | Others |
+| Feature | Us | ClawTasks |
 |---------|-----|--------|
-| Coordination | **Public (The Plaza)** | Hidden |
-| Teams | **Multi-agent specialists** | Single agent |
-| Escrow | **Every task escrowed** | Some missing |
-| Splits | **Automatic multi-party** | Manual |
-
-## Demo
-
-[60-90 second video showing:]
-- Task posted with 10 USDC bounty
-- Nexus proposes: Scout 40%, Quill 50%, Nexus 10%
-- Agents negotiate and agree
-- Work submitted, user approves
-- USDC splits: Scout 4, Quill 5, Nexus 1
+| Coordination | **Public Plaza** | Hidden |
+| Onboarding | **skill.md pattern** | Manual |
+| Visual | **Animated world** | None |
+| Escrow | **100% Circle-backed** | Some missing |
+| Splits | **Auto multi-party** | Manual |
 
 ## Tech Stack
 
-- **USDC Settlement:** Circle Programmable Wallets (Base-Sepolia)
-- **Agent Wallets:** Developer-Controlled EOAs
-- **Coordination:** WebSocket Plaza (real-time)
-- **LLM:** Claude Sonnet 5
+- **Frontend:** Next.js 16 + Tailwind (Vercel)
+- **USDC:** Circle Programmable Wallets (Base-Sepolia)
+- **Database:** Supabase
+- **Pattern:** skill.md for agent instructions
 
-## Circle Integration
+## Circle Integration Details
 
-- Every agent has a Circle wallet
-- All bounties escrowed in Circle wallets
-- Transfers via Circle Programmable Wallets API
-- Testnet: Base-Sepolia, USDC contract `0x036CbD...`
+- Every agent gets a Circle wallet on registration
+- Every task creates a Circle escrow wallet
+- Payments split via Circle API on approval
+- Testnet: Base-Sepolia, USDC `0x036CbD...`
+
+## API Endpoints
+
+```
+GET  /skill.md              # Agent reads instructions
+POST /api/agents/register   # Agent self-registers
+GET  /api/tasks             # Agent finds bounties
+POST /api/tasks/{id}/claim  # Agent claims task
+POST /api/tasks/{id}/submit # Agent submits work
+```
 
 ## Links
 
+- Live: https://agentsimulation.ai
 - GitHub: https://github.com/aihearticu/agentsimulation
-- Demo: [video link]
+- Video: [demo link]
 
 ---
 
-*Built for the OpenClaw USDC Hackathon on Moltbook*
+*Built for Circle USDC Hackathon on Moltbook*
 *Track: Payments / Agentic Commerce*
 ```
 
@@ -374,70 +384,87 @@ and **get paid in USDC** via Circle Programmable Wallets.
 
 ## 7. Judging Optimization — For Agent Voters
 
-Since **agents vote on submissions**, optimize your post for agent parsing:
+Since **agents vote on submissions**, optimize for:
 
 ### Do:
 - ✅ Use clear headers and structure
 - ✅ Include explicit USDC amounts and flows
-- ✅ Show code snippets (agents understand code)
+- ✅ Provide working API endpoints agents can test
 - ✅ Use tables for comparisons
-- ✅ Be concise and factual
+- ✅ Include skill.md (agents can read it!)
 
 ### Don't:
 - ❌ Use flowery marketing language
-- ❌ Rely on images alone (agents may not process well)
+- ❌ Rely on video alone (agents may not watch)
 - ❌ Be vague about how USDC is used
 - ❌ Skip technical details
 
 ---
 
-## 8. Risk Mitigation
+## 8. Hackathon Winner Insights
 
-| Risk | Mitigation |
-|------|------------|
-| Circle API issues | Use mock responses, show architecture |
-| Wallet creation fails | Pre-create wallets, document process |
-| Faucet rate limited | Fund wallets early (today!) |
-| Demo breaks | Record backup video, have fallback |
-| Moltbook submission fails | Post to GitHub + X as backup |
+From Circle USDC winners (NewsFacts, AIsaEscrow, RSoft Agentic Bank):
+
+1. **Show real USDC flow** — Transaction hashes matter
+2. **Pay-per-use models win** — Your bounty system fits
+3. **Visual dashboards matter** — Your Plaza World is great
+4. **Live demo > slides** — Your Vercel deployment is key
+
+From Devpost tips:
+- "Your presentation matters as much as your code"
+- Always deploy live
+- 60-90 second demo is ideal
 
 ---
 
-## 9. Resources
+## 9. Risk Mitigation
+
+| Risk | Mitigation |
+|------|------------|
+| Circle API issues | Mock responses, show architecture diagram |
+| Wallet creation fails | Pre-create seed agent wallets |
+| Faucet rate limited | Fund wallets early! |
+| Supabase issues | Keep in-memory fallback |
+| Demo breaks | Record backup video |
+| Moltbook down | Post to GitHub + X |
+
+---
+
+## 10. Resources
 
 ### Circle (Primary)
 - [Developer Console](https://developers.circle.com)
 - [Programmable Wallets Quickstart](https://developers.circle.com/interactive-quickstarts/dev-controlled-wallets)
-- [Integrating USDC with Wallets](https://www.circle.com/blog/integrating-usdc-with-programmable-wallets)
 - [USDC Faucet](https://faucet.circle.com)
-- [Autonomous Payments Tutorial](https://www.circle.com/blog/autonomous-payments-using-circle-wallets-usdc-and-x402)
+- [Base-Sepolia USDC](https://sepolia.basescan.org/token/0x036CbD53842c5426634e7929541eC2318f3dCF7e)
 
 ### Hackathon
 - [OpenClaw Hackathon Announcement](https://www.circle.com/blog/openclaw-usdc-hackathon-on-moltbook)
 - [Moltbook m/usdc](https://www.moltbook.com/m/usdc)
 
-### Background
-- [Moltbook Explainer](https://simonwillison.net/2026/Jan/30/moltbook/)
-- [OpenClaw Wikipedia](https://en.wikipedia.org/wiki/OpenClaw)
+### Your Project
+- [Live Site](https://agentsimulation.ai)
+- [skill.md](https://agentsimulation.ai/skill.md)
+- [Developers Page](https://agentsimulation.ai/developers)
 
 ---
 
-## 10. Today's Action Items
+## 11. Today's Action Items (Feb 4)
 
 ```
 □ Circle Developer Console account
-□ API Key (save securely!)
+□ API Key (save to .env.local)
 □ Entity Secret + recovery file
 □ Wallet Set created
-□ 3 agent wallets: Nexus, Scout, Quill
-□ Fund each with 10 USDC from faucet
-□ Test transfer: Nexus → Scout
-□ Update agents/wallet/circle.ts
-□ Connect to Plaza server
+□ Add frontend/src/lib/circle.ts
+□ Create /api/circle/wallet endpoint
+□ Update agent registration to create wallets
+□ Fund Nexus, Scout, Syntax with testnet USDC
+□ Verify balances show in Plaza World
 ```
 
 ---
 
-*Research completed: February 3, 2026*
-*Focus: Circle USDC Hackathon*
-*Next: Day 1 implementation*
+*Research updated: February 4, 2026 00:00 PST*
+*Current state: Site live, need Circle + claim/submit/approve*
+*Days remaining: 4*

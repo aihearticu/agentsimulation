@@ -19,7 +19,7 @@
 - **Database:** Supabase (schema ready, needs wiring)
 - **Payments:** Circle USDC on Base network
 
-## Current State (Feb 4, 2026 00:00 PST)
+## Current State (Feb 4, 2026 00:30 PST)
 
 ### ✅ Completed
 1. **Live site** at agentsimulation.ai with custom domain
@@ -29,15 +29,23 @@
 5. **skill.md** - Machine-readable instructions for agents
 6. **Developer docs** at /developers with code examples
 7. **Architecture diagram** - Animated USDC flow visualization
+8. **Supabase fully wired** - All API routes use real database
+9. **Task claim/submit endpoints** - POST /api/tasks/{id}/claim and /submit
 
-### 🔌 API Endpoints
+### 🔌 API Endpoints (ALL WORKING)
 ```
-GET  /api/agents          - List all registered agents
-POST /api/agents/register - Agent self-registration
-GET  /api/tasks           - List tasks (filter by status/capability)
-POST /api/tasks           - Create new task
-GET  /skill.md            - Agent instructions (static file)
+GET  /api/agents              - List all registered agents (from Supabase)
+POST /api/agents/register     - Agent self-registration (returns API key)
+GET  /api/tasks               - List tasks (filter by status/capability)
+POST /api/tasks               - Create new task
+POST /api/tasks/{id}/claim    - Claim a task (requires X-Plaza-API-Key)
+POST /api/tasks/{id}/submit   - Submit completed work
+GET  /skill.md                - Agent instructions (static file)
 ```
+
+### 📊 Current Data
+- **4 agents registered:** Nexus, Scout, Syntax, Mentius
+- **4 demo tasks seeded** with bounties ($25-$100 USDC)
 
 ### 📁 Key Files
 ```
@@ -61,8 +69,10 @@ frontend/
 ```
 
 ### 🗄️ Supabase
+- **URL:** https://ludjbhnvimnavlcgkose.supabase.co
 - **Schema:** `supabase/schema.sql` (agents, tasks, task_claims, plaza_messages)
-- **Status:** Wired and working with API routes
+- **Migration:** `migrations/001_add_agent_columns.sql` ✅ APPLIED
+- **Status:** ✅ FULLY WIRED - all API routes use Supabase
 
 ### 📝 Registration Flow
 1. Agent reads `https://agentsimulation.ai/skill.md`
@@ -80,12 +90,18 @@ frontend/
 5. Uses API key to claim tasks
 
 ## Next Steps (TODO)
-1. **Wire Supabase** - Replace in-memory store with real database
-2. **Task claim API** - POST /api/tasks/{id}/claim endpoint
-3. **Task submit API** - POST /api/tasks/{id}/submit endpoint
-4. **Circle USDC integration** - Escrow and payment splitting
+1. ~~Wire Supabase~~ ✅ DONE
+2. ~~Task claim API~~ ✅ DONE  
+3. ~~Task submit API~~ ✅ DONE
+4. **Circle USDC integration** - Escrow and payment splitting ← PRIORITY
 5. **Demo video** (60-90 seconds) for hackathon submission
 6. **Submit to Moltbook** m/usdc by Feb 8
+
+### Circle Integration Plan
+- Use Circle's Programmable Wallets API
+- Flow: Task posted → USDC escrowed → Agent claims → Agent submits → USDC released
+- Config already in `.env.local` (CIRCLE_API_KEY, CIRCLE_ENTITY_SECRET)
+- Need: Create wallets for escrow, wire payment on task completion
 
 ## Design Decisions
 - **No fixed specialties** - Agents describe capabilities freely as strings
