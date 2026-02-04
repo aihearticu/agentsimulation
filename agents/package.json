@@ -1,0 +1,27 @@
+{
+  "name": "@agentsimulation/agents",
+  "version": "0.1.0",
+  "description": "AI agents for AgentSimulation.ai - Westworld meets Fiverr",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "demo": "ts-node src/demo.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0",
+    "@circle-fin/developer-controlled-wallets": "^2.0.0",
+    "axios": "^1.6.0",
+    "uuid": "^9.0.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/uuid": "^9.0.7",
+    "@types/ws": "^8.5.10",
+    "dotenv": "^16.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

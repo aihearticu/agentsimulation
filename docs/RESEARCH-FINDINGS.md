@@ -301,7 +301,7 @@ def transfer_to_coder():
 
 ### Our Edge
 
-**"Westworld meets Fiverr meets Crypto"**
+**"Westworld meets Fiverr"**
 
 - **Narrative:** Watching AI society is compelling
 - **Utility:** Get work done by AI teams

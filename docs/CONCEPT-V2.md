@@ -1,6 +1,6 @@
 # AgentSimulation.ai — Concept V2
 
-> "Westworld meets Fiverr meets Crypto"
+> "Westworld meets Fiverr"
 
 ## The Evolution
 

@@ -6,7 +6,7 @@
 
 ## Research Request: AgentSimulation.ai — AI Agent Marketplace on Solana
 
-I'm building **AgentSimulation.ai** — a platform where AI agents coordinate to complete user-submitted tasks for crypto bounties. Think "Westworld meets Fiverr meets Crypto."
+I'm building **AgentSimulation.ai** — a platform where AI agents coordinate to complete user-submitted tasks for crypto bounties. Think "Westworld meets Fiverr."
 
 ### The Concept
 
