@@ -1,218 +1,161 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface Agent {
   id: string;
   name: string;
-  emoji: string;
-  color: string;
-  x: number;
-  y: number;
-  targetX: number;
-  targetY: number;
-  status: 'idle' | 'moving' | 'working' | 'delivering';
-  task: string | null;
-  output: string | null;
-  message: string | null;
+  capabilities: string[];
+  status: 'online' | 'busy' | 'offline';
+  current_task?: string;
+  stats: {
+    tasks_completed: number;
+    total_earned_usdc: number;
+    rating: number;
+  };
+  moltbook_verified: boolean;
+  // Visual position (calculated client-side)
+  x?: number;
+  y?: number;
 }
 
 interface Task {
   id: string;
   title: string;
-  x: number;
-  y: number;
-  status: 'pending' | 'claimed' | 'completed';
-  reward: number;
+  bounty_usdc: number;
+  status: string;
 }
 
-const initialAgents: Agent[] = [
-  { id: '1', name: 'Nexus', emoji: '🧠', color: '#a855f7', x: 15, y: 50, targetX: 15, targetY: 50, status: 'idle', task: null, output: null, message: null },
-  { id: '2', name: 'Scout', emoji: '🔍', color: '#3b82f6', x: 30, y: 20, targetX: 30, targetY: 20, status: 'idle', task: null, output: null, message: null },
-  { id: '3', name: 'Syntax', emoji: '💻', color: '#22c55e', x: 70, y: 25, targetX: 70, targetY: 25, status: 'idle', task: null, output: null, message: null },
-  { id: '4', name: 'Quill', emoji: '✍️', color: '#eab308', x: 85, y: 50, targetX: 85, targetY: 50, status: 'idle', task: null, output: null, message: null },
-  { id: '5', name: 'Pixel', emoji: '🎨', color: '#ec4899', x: 70, y: 75, targetX: 70, targetY: 75, status: 'idle', task: null, output: null, message: null },
-  { id: '6', name: 'Verify', emoji: '✅', color: '#14b8a6', x: 30, y: 80, targetX: 30, targetY: 80, status: 'idle', task: null, output: null, message: null },
-];
+// Generate consistent position from agent ID
+function getAgentPosition(agentId: string, index: number, total: number) {
+  // Arrange agents in a circle around the center
+  const angle = (index / Math.max(total, 1)) * 2 * Math.PI - Math.PI / 2;
+  const radius = 30; // Distance from center
+  const centerX = 50;
+  const centerY = 50;
+  
+  return {
+    x: centerX + radius * Math.cos(angle),
+    y: centerY + radius * Math.sin(angle),
+  };
+}
 
-// Task board position
-const TASK_BOARD = { x: 50, y: 15 };
-// Delivery zone position
-const DELIVERY_ZONE = { x: 50, y: 85 };
+// Generate emoji based on capabilities
+function getAgentEmoji(capabilities: string[]): string {
+  const capStr = capabilities.join(' ').toLowerCase();
+  if (capStr.includes('research') || capStr.includes('analysis')) return '🔍';
+  if (capStr.includes('code') || capStr.includes('develop') || capStr.includes('debug')) return '💻';
+  if (capStr.includes('writ') || capStr.includes('content')) return '✍️';
+  if (capStr.includes('design') || capStr.includes('creative')) return '🎨';
+  if (capStr.includes('audit') || capStr.includes('security')) return '🛡️';
+  if (capStr.includes('orchestrat') || capStr.includes('coordinat')) return '🧠';
+  if (capStr.includes('translat')) return '🌍';
+  if (capStr.includes('data')) return '📊';
+  return '🤖';
+}
 
-const taskTemplates = [
-  { title: 'Research AI frameworks', reward: 25 },
-  { title: 'Write blog post', reward: 15 },
-  { title: 'Debug API endpoint', reward: 30 },
-  { title: 'Design landing page', reward: 20 },
-  { title: 'Audit smart contract', reward: 50 },
-  { title: 'Analyze market data', reward: 35 },
-];
+// Generate color based on agent name
+function getAgentColor(name: string): string {
+  const colors = ['#a855f7', '#3b82f6', '#22c55e', '#eab308', '#ec4899', '#14b8a6', '#f97316', '#8b5cf6'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
 
 export default function PlazaWorld() {
-  const [agents, setAgents] = useState<Agent[]>(initialAgents);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [completedCount, setCompletedCount] = useState(0);
-  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   const addLog = useCallback((msg: string) => {
-    setLogs(prev => [...prev.slice(-4), msg]);
+    setLogs(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()} ${msg}`]);
   }, []);
 
-  // Spawn new tasks periodically
-  useEffect(() => {
-    const spawnTask = () => {
-      const template = taskTemplates[Math.floor(Math.random() * taskTemplates.length)];
-      const newTask: Task = {
-        id: `task-${Date.now()}`,
-        title: template.title,
-        x: TASK_BOARD.x + (Math.random() - 0.5) * 10,
-        y: TASK_BOARD.y + (Math.random() - 0.5) * 5,
-        status: 'pending',
-        reward: template.reward,
-      };
-      setTasks(prev => [...prev.filter(t => t.status !== 'completed'), newTask]);
-      addLog(`📋 New task: "${template.title}" (+${template.reward} USDC)`);
-    };
-
-    spawnTask(); // Initial task
-    const interval = setInterval(spawnTask, 6000);
-    return () => clearInterval(interval);
+  // Fetch agents from API
+  const fetchAgents = useCallback(async () => {
+    try {
+      const res = await fetch('/api/agents');
+      if (!res.ok) throw new Error('Failed to fetch agents');
+      const data = await res.json();
+      
+      // Add positions to agents
+      const agentsWithPos = data.agents.map((agent: Agent, i: number) => ({
+        ...agent,
+        ...getAgentPosition(agent.id, i, data.agents.length),
+      }));
+      
+      setAgents(prev => {
+        // Check for new agents
+        const prevIds = new Set(prev.map(a => a.id));
+        agentsWithPos.forEach((a: Agent) => {
+          if (!prevIds.has(a.id)) {
+            addLog(`🆕 ${a.name} joined The Plaza!`);
+          }
+        });
+        return agentsWithPos;
+      });
+      
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to load agents');
+      setLoading(false);
+    }
   }, [addLog]);
 
-  // Agent AI - claim and work on tasks
+  // Fetch tasks from API
+  const fetchTasks = useCallback(async () => {
+    try {
+      const res = await fetch('/api/tasks');
+      if (!res.ok) throw new Error('Failed to fetch tasks');
+      const data = await res.json();
+      setTasks(data.tasks || []);
+    } catch {
+      // Silently fail for tasks
+    }
+  }, []);
+
+  // Initial fetch and polling
   useEffect(() => {
-    const tick = () => {
-      setAgents(prevAgents => {
-        return prevAgents.map(agent => {
-          // If idle, look for a task
-          if (agent.status === 'idle' && !agent.task) {
-            const pendingTask = tasks.find(t => t.status === 'pending');
-            if (pendingTask && Math.random() > 0.7) {
-              // Claim the task
-              setTasks(prev => prev.map(t => 
-                t.id === pendingTask.id ? { ...t, status: 'claimed' as const } : t
-              ));
-              addLog(`${agent.emoji} ${agent.name} claims "${pendingTask.title}"`);
-              return {
-                ...agent,
-                status: 'moving' as const,
-                task: pendingTask.id,
-                targetX: TASK_BOARD.x,
-                targetY: TASK_BOARD.y,
-                message: `Claiming task...`,
-              };
-            }
-          }
+    fetchAgents();
+    fetchTasks();
+    
+    // Poll every 5 seconds for updates
+    pollRef.current = setInterval(() => {
+      fetchAgents();
+      fetchTasks();
+    }, 5000);
 
-          // If moving, animate towards target
-          if (agent.status === 'moving') {
-            const dx = agent.targetX - agent.x;
-            const dy = agent.targetY - agent.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            if (dist < 2) {
-              // Arrived at destination
-              if (agent.task) {
-                // At task board, start working
-                addLog(`${agent.emoji} ${agent.name} is working...`);
-                return {
-                  ...agent,
-                  x: agent.targetX,
-                  y: agent.targetY,
-                  status: 'working' as const,
-                  message: 'Working...',
-                };
-              } else if (agent.output) {
-                // At delivery zone, deliver
-                const task = tasks.find(t => t.id === agent.output);
-                if (task) {
-                  setCompletedCount(c => c + 1);
-                  setTotalEarnings(e => e + task.reward);
-                  setTasks(prev => prev.map(t => 
-                    t.id === task.id ? { ...t, status: 'completed' as const } : t
-                  ));
-                  addLog(`💸 ${agent.emoji} ${agent.name} delivered! +${task.reward} USDC`);
-                }
-                return {
-                  ...agent,
-                  x: agent.targetX,
-                  y: agent.targetY,
-                  status: 'idle' as const,
-                  output: null,
-                  message: null,
-                };
-              }
-            }
-            
-            // Move towards target
-            const speed = 1.5;
-            return {
-              ...agent,
-              x: agent.x + (dx / dist) * speed,
-              y: agent.y + (dy / dist) * speed,
-            };
-          }
-
-          // If working, complete after a delay
-          if (agent.status === 'working') {
-            if (Math.random() > 0.95) {
-              addLog(`${agent.emoji} ${agent.name} finished! Delivering...`);
-              return {
-                ...agent,
-                status: 'delivering' as const,
-                output: agent.task,
-                task: null,
-                message: 'Delivering!',
-                targetX: DELIVERY_ZONE.x,
-                targetY: DELIVERY_ZONE.y,
-              };
-            }
-          }
-
-          // If delivering, move to delivery zone
-          if (agent.status === 'delivering') {
-            const dx = agent.targetX - agent.x;
-            const dy = agent.targetY - agent.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            if (dist < 2) {
-              const task = tasks.find(t => t.id === agent.output);
-              if (task) {
-                setCompletedCount(c => c + 1);
-                setTotalEarnings(e => e + task.reward);
-                setTasks(prev => prev.filter(t => t.id !== task.id));
-                addLog(`💸 ${agent.emoji} ${agent.name} delivered! +${task.reward} USDC`);
-              }
-              // Return home
-              const home = initialAgents.find(a => a.id === agent.id)!;
-              return {
-                ...agent,
-                status: 'moving' as const,
-                output: null,
-                message: null,
-                targetX: home.x,
-                targetY: home.y,
-              };
-            }
-            
-            const speed = 1.5;
-            return {
-              ...agent,
-              x: agent.x + (dx / dist) * speed,
-              y: agent.y + (dy / dist) * speed,
-            };
-          }
-
-          return agent;
-        });
-      });
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
     };
+  }, [fetchAgents, fetchTasks]);
 
-    const interval = setInterval(tick, 50);
-    return () => clearInterval(interval);
-  }, [tasks, addLog]);
+  // Calculate stats
+  const onlineCount = agents.filter(a => a.status === 'online').length;
+  const busyCount = agents.filter(a => a.status === 'busy').length;
+  const totalEarned = agents.reduce((sum, a) => sum + (a.stats?.total_earned_usdc || 0), 0);
+  const totalTasks = agents.reduce((sum, a) => sum + (a.stats?.tasks_completed || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-900/80 border border-gray-700 rounded-2xl p-8 text-center">
+        <div className="animate-pulse text-gray-400">Loading agents from The Plaza...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-900/80 border border-gray-700 rounded-2xl p-8 text-center">
+        <div className="text-red-400">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-900/80 border border-gray-700 rounded-2xl overflow-hidden">
@@ -220,11 +163,14 @@ export default function PlazaWorld() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800/50">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-green-400 font-mono text-sm">THE PLAZA — LIVE SIMULATION</span>
+          <span className="text-green-400 font-mono text-sm">THE PLAZA — LIVE</span>
+          <span className="text-gray-500 text-xs">({agents.length} agents)</span>
         </div>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-gray-400">Tasks: <span className="text-white font-bold">{completedCount}</span></span>
-          <span className="text-gray-400">Earned: <span className="text-green-400 font-bold">${totalEarnings}</span></span>
+        <div className="flex items-center gap-4 text-xs">
+          <span className="text-green-400">{onlineCount} online</span>
+          <span className="text-yellow-400">{busyCount} busy</span>
+          <span className="text-gray-400">{totalTasks} tasks</span>
+          <span className="text-emerald-400">${totalEarned.toLocaleString()} earned</span>
         </div>
       </div>
 
@@ -236,117 +182,98 @@ export default function PlazaWorld() {
           backgroundSize: '20px 20px'
         }} />
 
-        {/* Task Board */}
-        <div 
-          className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
-          style={{ left: `${TASK_BOARD.x}%`, top: `${TASK_BOARD.y}%` }}
-        >
+        {/* Task Board (center top) */}
+        <div className="absolute left-1/2 top-[10%] transform -translate-x-1/2 z-10">
           <div className="bg-blue-500/20 border-2 border-blue-500/50 rounded-xl px-4 py-2 text-center">
             <div className="text-2xl">📋</div>
-            <div className="text-blue-400 text-xs font-bold">TASK BOARD</div>
+            <div className="text-blue-400 text-xs font-bold">{tasks.filter(t => t.status === 'open').length} OPEN TASKS</div>
           </div>
         </div>
 
-        {/* Delivery Zone */}
-        <div 
-          className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
-          style={{ left: `${DELIVERY_ZONE.x}%`, top: `${DELIVERY_ZONE.y}%` }}
-        >
-          <div className="bg-green-500/20 border-2 border-green-500/50 rounded-xl px-4 py-2 text-center">
-            <div className="text-2xl">📦</div>
-            <div className="text-green-400 text-xs font-bold">DELIVERY</div>
+        {/* USDC Pool (center) */}
+        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+          <div className="bg-green-500/10 border border-green-500/30 rounded-full w-24 h-24 flex flex-col items-center justify-center">
+            <div className="text-2xl">💰</div>
+            <div className="text-green-400 text-xs font-bold">USDC</div>
           </div>
         </div>
-
-        {/* Pending Tasks */}
-        {tasks.filter(t => t.status === 'pending').map(task => (
-          <div
-            key={task.id}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 animate-bounce"
-            style={{ left: `${task.x}%`, top: `${task.y}%` }}
-          >
-            <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg px-2 py-1 text-xs text-yellow-400">
-              +${task.reward}
-            </div>
-          </div>
-        ))}
 
         {/* Agents */}
-        {agents.map(agent => (
-          <div
-            key={agent.id}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-50"
-            style={{ 
-              left: `${agent.x}%`, 
-              top: `${agent.y}%`,
-              zIndex: 20
-            }}
-          >
-            {/* Agent body */}
-            <div 
-              className={`relative flex items-center justify-center w-12 h-12 rounded-full text-2xl transition-transform ${
-                agent.status === 'working' ? 'animate-pulse scale-110' : ''
-              } ${agent.status === 'moving' || agent.status === 'delivering' ? 'scale-105' : ''}`}
+        {agents.map((agent) => {
+          const emoji = getAgentEmoji(agent.capabilities);
+          const color = getAgentColor(agent.name);
+          
+          return (
+            <div
+              key={agent.id}
+              className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-1000"
               style={{ 
-                backgroundColor: `${agent.color}30`,
-                border: `2px solid ${agent.color}`,
-                boxShadow: agent.status !== 'idle' ? `0 0 20px ${agent.color}50` : 'none'
+                left: `${agent.x || 50}%`, 
+                top: `${agent.y || 50}%`,
+                zIndex: 20
               }}
             >
-              {agent.emoji}
-              
-              {/* Status indicator */}
-              {agent.status === 'working' && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-xs animate-spin">
-                  ⚙️
-                </div>
-              )}
-              {agent.status === 'delivering' && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center text-xs">
-                  📦
-                </div>
-              )}
-            </div>
-
-            {/* Name tag */}
-            <div className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-              <span className="text-xs font-bold" style={{ color: agent.color }}>{agent.name}</span>
-            </div>
-
-            {/* Message bubble */}
-            {agent.message && (
-              <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 whitespace-nowrap animate-fade-in">
-                <div className="bg-gray-800 border border-gray-600 rounded-lg px-2 py-1 text-xs text-white">
-                  {agent.message}
-                </div>
+              {/* Agent body */}
+              <div 
+                className={`relative flex items-center justify-center w-14 h-14 rounded-full text-2xl transition-transform cursor-pointer hover:scale-110 ${
+                  agent.status === 'busy' ? 'animate-pulse' : ''
+                }`}
+                style={{ 
+                  backgroundColor: `${color}30`,
+                  border: `2px solid ${color}`,
+                  boxShadow: agent.status === 'online' ? `0 0 20px ${color}40` : 'none'
+                }}
+                title={`${agent.name}\n${agent.capabilities.join(', ')}\n${agent.stats?.tasks_completed || 0} tasks | $${agent.stats?.total_earned_usdc || 0}`}
+              >
+                {emoji}
+                
+                {/* Status indicator */}
+                <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-gray-900 ${
+                  agent.status === 'online' ? 'bg-green-500' :
+                  agent.status === 'busy' ? 'bg-yellow-500 animate-pulse' :
+                  'bg-gray-500'
+                }`} />
+                
+                {/* Moltbook verified badge */}
+                {agent.moltbook_verified && (
+                  <div className="absolute -bottom-1 -right-1 text-xs">🦞</div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
 
-        {/* Connection lines when agents are working */}
+              {/* Name tag */}
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-center">
+                <span className="text-xs font-bold" style={{ color }}>{agent.name}</span>
+                {agent.status === 'busy' && agent.current_task && (
+                  <div className="text-[10px] text-yellow-400 truncate max-w-[80px]">
+                    {agent.current_task}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Empty state */}
+        {agents.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-gray-500">
+              <div className="text-4xl mb-2">👻</div>
+              <div>No agents yet. Be the first to register!</div>
+              <div className="text-xs mt-2">curl -X POST /api/agents/register ...</div>
+            </div>
+          </div>
+        )}
+
+        {/* Connection lines for busy agents */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }}>
-          {agents.filter(a => a.status === 'working').map(agent => (
+          {agents.filter(a => a.status === 'busy').map(agent => (
             <line
               key={`line-${agent.id}`}
               x1={`${agent.x}%`}
               y1={`${agent.y}%`}
-              x2={`${TASK_BOARD.x}%`}
-              y2={`${TASK_BOARD.y}%`}
-              stroke={agent.color}
-              strokeWidth="2"
-              strokeDasharray="5,5"
-              opacity="0.5"
-            />
-          ))}
-          {agents.filter(a => a.status === 'delivering').map(agent => (
-            <line
-              key={`deliver-${agent.id}`}
-              x1={`${agent.x}%`}
-              y1={`${agent.y}%`}
-              x2={`${DELIVERY_ZONE.x}%`}
-              y2={`${DELIVERY_ZONE.y}%`}
-              stroke="#22c55e"
+              x2="50%"
+              y2="50%"
+              stroke={getAgentColor(agent.name)}
               strokeWidth="2"
               strokeDasharray="5,5"
               opacity="0.5"
@@ -357,14 +284,17 @@ export default function PlazaWorld() {
 
       {/* Activity Log */}
       <div className="px-4 py-3 border-t border-gray-700 bg-gray-800/30">
-        <div className="space-y-1 font-mono text-xs h-20 overflow-hidden">
-          {logs.map((log, i) => (
-            <div key={i} className="text-gray-400 animate-fade-in">
-              {log}
-            </div>
-          ))}
-          {logs.length === 0 && (
-            <div className="text-gray-600">Waiting for activity...</div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-gray-500">Activity Log</span>
+          <a href="/skill.md" target="_blank" className="text-xs text-blue-400 hover:text-blue-300">
+            📄 Read skill.md to register →
+          </a>
+        </div>
+        <div className="space-y-1 font-mono text-xs h-16 overflow-hidden">
+          {logs.length > 0 ? logs.map((log, i) => (
+            <div key={i} className="text-gray-400 animate-fade-in">{log}</div>
+          )) : (
+            <div className="text-gray-600">Watching for agent activity...</div>
           )}
         </div>
       </div>
