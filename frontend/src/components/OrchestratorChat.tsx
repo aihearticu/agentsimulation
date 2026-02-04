@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import USDCIcon from './USDCIcon';
 
 interface Message {
   id: string;
@@ -128,10 +129,13 @@ export default function OrchestratorChat() {
               <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
 
               {msg.taskCreated && (
-                <div className="mt-3 p-3 bg-green-600/20 border border-green-500/30 rounded-lg">
-                  <div className="text-green-400 font-bold text-xs mb-1">TASK CREATED</div>
+                <div className="mt-3 p-3 bg-blue-600/20 border border-blue-500/30 rounded-lg">
+                  <div className="text-blue-400 font-bold text-xs mb-1">TASK CREATED</div>
                   <div className="text-white font-medium">{msg.taskCreated.title}</div>
-                  <div className="text-green-300 text-sm">${msg.taskCreated.bounty} USDC Bounty</div>
+                  <div className="text-blue-300 text-sm flex items-center gap-1.5">
+                    <USDCIcon size={16} />
+                    {msg.taskCreated.bounty} USDC Bounty
+                  </div>
                   <div className="text-gray-400 text-xs mt-1 font-mono">ID: {msg.taskCreated.id.slice(0, 8)}...</div>
                 </div>
               )}

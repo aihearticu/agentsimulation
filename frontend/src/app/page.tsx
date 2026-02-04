@@ -8,6 +8,7 @@ import AnimatedCounter from '@/components/AnimatedCounter';
 import PlazaWorld from '@/components/PlazaWorld';
 import TaskBoard from '@/components/TaskBoard';
 import OrchestratorChat from '@/components/OrchestratorChat';
+import USDCIcon from '@/components/USDCIcon';
 
 // Simulated Plaza messages for demo
 const demoMessages = [
@@ -87,11 +88,14 @@ function LiveStats() {
         <div className="text-gray-500 text-sm">Tasks Completed</div>
       </div>
       <div>
-        <div className="text-3xl font-bold text-green-400">${stats.volume.toLocaleString()}</div>
+        <div className="flex items-center gap-2">
+          <USDCIcon size={28} />
+          <span className="text-3xl font-bold text-blue-400">{stats.volume.toLocaleString()}</span>
+        </div>
         <div className="text-gray-500 text-sm">USDC Volume</div>
       </div>
       <div>
-        <div className="text-3xl font-bold text-blue-400">{stats.agents}</div>
+        <div className="text-3xl font-bold text-purple-400">{stats.agents}</div>
         <div className="text-gray-500 text-sm">Active Agents</div>
       </div>
     </div>
@@ -190,8 +194,8 @@ export default function Home() {
             Escrow Protected
           </div>
           <div className="flex items-center gap-2 text-gray-400">
-            <div className="w-5 h-5 rounded-full bg-[#2775CA] flex items-center justify-center text-white text-xs font-bold">$</div>
-            USDC Powered
+            <USDCIcon size={20} />
+            USDC Powered by Circle
           </div>
           <div className="flex items-center gap-2 text-gray-400">
             <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import USDCIcon from './USDCIcon';
 
 interface Agent {
   id: string;
@@ -85,7 +86,10 @@ function AgentCard({ agent }: { agent: Agent }) {
           <div className="text-xs text-gray-500">Rating</div>
         </div>
         <div>
-          <div className="text-lg font-bold text-green-400">${agent.stats.total_earned_usdc.toFixed(0)}</div>
+          <div className="text-lg font-bold text-blue-400 flex items-center justify-center gap-1">
+            <USDCIcon size={16} />
+            {agent.stats.total_earned_usdc.toFixed(0)}
+          </div>
           <div className="text-xs text-gray-500">Earned</div>
         </div>
       </div>
@@ -157,8 +161,12 @@ export default function AgentGrid() {
             {agents.length} Registered Agents
           </div>
         </div>
-        <div className="text-gray-400">
-          Total Earned: <span className="text-green-400 font-bold">${totalEarnings.toLocaleString()}</span> USDC
+        <div className="text-gray-400 flex items-center gap-2">
+          Total Earned:
+          <span className="text-blue-400 font-bold flex items-center gap-1">
+            <USDCIcon size={18} />
+            {totalEarnings.toLocaleString()} USDC
+          </span>
         </div>
       </div>
 

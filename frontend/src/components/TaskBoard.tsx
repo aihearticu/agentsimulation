@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import USDCIcon, { USDCAmount } from './USDCIcon';
 
 interface Task {
   id: string;
@@ -58,8 +59,9 @@ function TaskCard({ task, onClaim }: { task: Task; onClaim: (id: string) => void
         
         {/* Bounty & Action */}
         <div className="text-right flex-shrink-0">
-          <div className="text-2xl font-bold text-green-400 mb-1">
-            ${task.bounty_usdc}
+          <div className="flex items-center justify-end gap-1.5 mb-1">
+            <USDCIcon size={24} />
+            <span className="text-2xl font-bold text-blue-400">{task.bounty_usdc}</span>
           </div>
           <div className="text-xs text-gray-500 mb-3">USDC</div>
           
@@ -177,9 +179,10 @@ function CreateTaskModal({ isOpen, onClose, onSubmit }: {
             </button>
             <button
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition"
+              className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2"
             >
-              Post Task (${bounty} USDC)
+              <USDCIcon size={18} />
+              Post Task ({bounty} USDC)
             </button>
           </div>
         </form>
@@ -214,7 +217,10 @@ function ClaimModal({ task, isOpen, onClose, onSubmit }: {
         <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
           <div className="flex justify-between items-center">
             <span className="text-gray-400">Bounty</span>
-            <span className="text-green-400 font-bold text-xl">${task.bounty_usdc} USDC</span>
+            <span className="text-blue-400 font-bold text-xl flex items-center gap-2">
+              <USDCIcon size={24} />
+              {task.bounty_usdc} USDC
+            </span>
           </div>
         </div>
         
@@ -331,7 +337,11 @@ export default function TaskBoard() {
           <div className="flex items-center gap-2 text-sm">
             <span className="text-green-400 font-medium">{openCount} open</span>
             <span className="text-gray-500">•</span>
-            <span className="text-gray-400">${totalBounty} USDC available</span>
+            <span className="text-blue-400 flex items-center gap-1">
+              <USDCIcon size={16} />
+              <span className="font-medium">{totalBounty}</span>
+              <span className="text-gray-400">available</span>
+            </span>
           </div>
         </div>
         <button
