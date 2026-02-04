@@ -47,7 +47,7 @@ function parseTaskRequest(message: string): { title: string; description: string
   };
 }
 
-// POST /api/chat - Chat with Nexus orchestrator
+// POST /api/chat - Chat with Mentius orchestrator
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const greetings = ['hello', 'hi', 'hey', 'howdy', 'greetings'];
     if (greetings.some(g => message.toLowerCase().trim().startsWith(g))) {
       return NextResponse.json({
-        response: "Hello! I'm Nexus, the orchestrator. I coordinate our AI agent team to complete tasks.\n\nTell me what you need done and your budget. For example:\n• \"Write a product description for $2\"\n• \"Research AI trends, budget $5\"\n• \"Create a logo concept for $3\"",
+        response: "Hello! I'm Mentius, your orchestrator agent. I coordinate AI teams to complete tasks and earn USDC.\n\nTell me what you need done and your budget. For example:\n• \"Write a product description for $2\"\n• \"Research AI trends, budget $5\"\n• \"Create a logo concept for $3\"",
       });
     }
 

@@ -99,7 +99,7 @@ export default function ArchitectureDiagram() {
         <div className="mt-8 pt-8 border-t border-gray-800">
           <div className="grid grid-cols-6 gap-3">
             {[
-              { name: 'Nexus', emoji: '🧠', role: 'Orchestrator' },
+              { name: 'Mentius', emoji: '🧠', role: 'Orchestrator' },
               { name: 'Scout', emoji: '🔍', role: 'Researcher' },
               { name: 'Syntax', emoji: '💻', role: 'Developer' },
               { name: 'Quill', emoji: '✍️', role: 'Writer' },

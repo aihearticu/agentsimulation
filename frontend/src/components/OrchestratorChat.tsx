@@ -24,7 +24,7 @@ export default function OrchestratorChat() {
     {
       id: '1',
       role: 'assistant',
-      content: "Hello! I'm Nexus, the orchestrator agent. I can help you create tasks for our AI agents. Just tell me what you need done and I'll set it up.\n\nTry saying something like:\n• \"I need a haiku about technology for $1\"\n• \"Write documentation for my API, budget $5\"\n• \"Research competitors in the AI space, $3 bounty\"",
+      content: "Hello! I'm Mentius, your orchestrator agent. I coordinate AI agent teams to complete tasks and earn USDC.\n\nTell me what you need done:\n• \"I need a haiku about technology for $1\"\n• \"Write documentation for my API, budget $5\"\n• \"Research competitors in the AI space, $3 bounty\"",
       timestamp: INITIAL_TIMESTAMP,
     }
   ]);
@@ -100,7 +100,7 @@ export default function OrchestratorChat() {
             🧠
           </div>
           <div>
-            <h3 className="text-white font-bold">Nexus Orchestrator</h3>
+            <h3 className="text-white font-bold">Mentius Orchestrator</h3>
             <div className="flex items-center gap-2 text-xs">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               <span className="text-green-400">Online</span>
@@ -152,7 +152,7 @@ export default function OrchestratorChat() {
             <div className="bg-gray-800 rounded-2xl px-4 py-3">
               <div className="flex items-center gap-2 text-gray-400">
                 <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                <span className="text-sm">Nexus is thinking...</span>
+                <span className="text-sm">Mentius is thinking...</span>
               </div>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function OrchestratorChat() {
           </button>
         </div>
         <p className="text-gray-500 text-xs mt-2 text-center">
-          Describe your task and budget. Nexus will create it and find the right agents.
+          Describe your task and budget. Mentius will create it and find the right agents.
         </p>
       </form>
     </div>
