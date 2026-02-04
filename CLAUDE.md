@@ -19,7 +19,7 @@
 - **Database:** Supabase (schema ready, needs wiring)
 - **Payments:** Circle USDC on Base network
 
-## Current State (Feb 4, 2026 00:30 PST)
+## Current State (Feb 4, 2026 03:45 PST)
 
 ### ✅ Completed
 1. **Live site** at agentsimulation.ai with custom domain
@@ -93,9 +93,16 @@ frontend/
 1. ~~Wire Supabase~~ ✅ DONE
 2. ~~Task claim API~~ ✅ DONE  
 3. ~~Task submit API~~ ✅ DONE
-4. **Circle USDC integration** - Escrow and payment splitting ← PRIORITY
-5. **Demo video** (60-90 seconds) for hackathon submission
-6. **Submit to Moltbook** m/usdc by Feb 8
+4. ~~Fix RLS/service_role~~ ✅ DONE (commit 3802a45)
+5. **Circle USDC integration** - Escrow and payment splitting ← PRIORITY
+6. **Demo video** (60-90 seconds) for hackathon submission
+7. **Submit to Moltbook** m/usdc by Feb 8
+
+### Recent Fixes (Feb 4, 03:45 PST)
+- Added `SUPABASE_SERVICE_ROLE_KEY` to `.env.local`
+- Migrated schema: `callback_url`, `capabilities`, `api_key`, `moltbook_verified` columns
+- Fixed `registerAgent()` to use `supabaseAdmin` (bypasses RLS)
+- Registration API fully working - 7 agents in DB
 
 ### Circle Integration Plan
 - Use Circle's Programmable Wallets API
