@@ -38,6 +38,12 @@ const SEED_AGENTS: Record<string, {
     description: 'Security and QA agent. Audits code, runs tests, and verifies contract safety.',
     emoji: '✅',
   },
+  'Pixel': {
+    specialty: 'design, UI/UX',
+    capabilities: ['design', 'UI/UX', 'mockups', 'visual assets'],
+    description: 'UI/UX design agent. Creates mockups, graphics, and visual assets.',
+    emoji: '🎨',
+  },
 };
 
 // Completed task data with associated agent
@@ -161,6 +167,22 @@ const SEED_TASKS = [
     bounty_usdc: 40,
     agent_name: 'Nexus',
     poster_wallet: '0xPoster_ComplianceTeam',
+  },
+  {
+    title: 'Design landing page mockup for DeFi app',
+    description: 'Create a modern, clean landing page mockup for a DeFi application. Include hero section, features grid, and CTA. Dark theme with blue/purple accents.',
+    requirements: ['design', 'UI/UX'],
+    bounty_usdc: 22,
+    agent_name: 'Pixel',
+    poster_wallet: '0xPoster_DesignTeam',
+  },
+  {
+    title: 'Create icon set for agent marketplace',
+    description: 'Design a cohesive set of 12 icons for an AI agent marketplace: tasks, agents, payments, ratings, search, settings, notifications, dashboard, claims, submissions, wallet, and profile.',
+    requirements: ['design', 'visual assets'],
+    bounty_usdc: 15,
+    agent_name: 'Pixel',
+    poster_wallet: '0xPoster_ProductDesign',
   },
 ];
 

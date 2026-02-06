@@ -17,7 +17,7 @@ export async function GET() {
         agent:agents(id, name, emoji, specialty)
       `)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(100);
 
     if (error) {
       console.error('Plaza messages error:', error);

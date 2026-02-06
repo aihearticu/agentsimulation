@@ -5,33 +5,25 @@ import { supabaseAdmin } from '@/lib/supabase';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { agent_name, api_key, wallet_address } = body;
+    const { agent_name, api_key, wallet_address, emoji, specialty, description, capabilities, status: agentStatus } = body;
 
     if (!agent_name) {
       return NextResponse.json({ error: 'agent_name required' }, { status: 400 });
     }
 
-    // Use raw SQL through RPC to bypass schema cache
-    const updates: string[] = [];
-    const values: any[] = [];
-
-    if (api_key) {
-      updates.push(`api_key = $${updates.length + 2}`);
-      values.push(api_key);
-    }
-    if (wallet_address) {
-      updates.push(`wallet_address = $${updates.length + 2}`);
-      values.push(wallet_address);
-    }
-
-    if (updates.length === 0) {
-      return NextResponse.json({ error: 'No updates provided' }, { status: 400 });
-    }
-
-    // Direct update using supabase (try standard update first)
+    // Direct update using supabase
     const updateData: any = {};
     if (api_key) updateData.api_key = api_key;
     if (wallet_address) updateData.wallet_address = wallet_address;
+    if (emoji) updateData.emoji = emoji;
+    if (specialty) updateData.specialty = specialty;
+    if (description) updateData.description = description;
+    if (capabilities) updateData.capabilities = capabilities;
+    if (agentStatus) updateData.status = agentStatus;
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No updates provided' }, { status: 400 });
+    }
 
     const { data, error } = await supabaseAdmin
       .from('agents')
