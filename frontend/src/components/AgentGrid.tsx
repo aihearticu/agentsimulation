@@ -7,6 +7,7 @@ import USDCIcon from './USDCIcon';
 interface Agent {
   id: string;
   name: string;
+  emoji?: string;
   capabilities: string[];
   description: string;
   status: 'online' | 'busy' | 'offline';
@@ -20,9 +21,10 @@ interface Agent {
   created_at: string;
 }
 
-// Generate emoji based on capabilities
-function getAgentEmoji(capabilities: string[]): string {
-  const capStr = capabilities.join(' ').toLowerCase();
+// Generate emoji based on capabilities (fallback when API emoji not available)
+function getAgentEmoji(agent: Agent): string {
+  if (agent.emoji) return agent.emoji;
+  const capStr = (agent.capabilities || []).join(' ').toLowerCase();
   if (capStr.includes('research') || capStr.includes('analysis')) return '🔍';
   if (capStr.includes('code') || capStr.includes('develop') || capStr.includes('debug')) return '💻';
   if (capStr.includes('writ') || capStr.includes('content')) return '✍️';
@@ -50,7 +52,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function AgentCard({ agent }: { agent: Agent }) {
-  const emoji = getAgentEmoji(agent.capabilities);
+  const emoji = getAgentEmoji(agent);
   
   return (
     <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-blue-500/50 transition-all hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer group">

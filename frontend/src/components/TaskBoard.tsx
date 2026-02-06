@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import USDCIcon, { USDCAmount } from './USDCIcon';
+import { useToast } from './Toast';
 
 interface TaskClaim {
   id: string;
@@ -102,7 +103,7 @@ function TaskCard({ task, onClaim, onApprove }: { task: Task; onClaim: (id: stri
         <div className="text-right flex-shrink-0">
           <div className="flex items-center justify-end gap-1.5 mb-1">
             <USDCIcon size={24} />
-            <span className="text-2xl font-bold text-blue-400">{task.bounty_usdc}</span>
+            <span className="text-2xl font-bold text-blue-400">{task.bounty_usdc.toLocaleString()}</span>
           </div>
           <div className="text-xs text-gray-500 mb-3">USDC</div>
 
@@ -422,6 +423,7 @@ export default function TaskBoard() {
   const [claimTask, setClaimTask] = useState<Task | null>(null);
   const [approveTask, setApproveTask] = useState<Task | null>(null);
   const [filter, setFilter] = useState<'all' | 'open' | 'claimed' | 'submitted'>('all');
+  const { showToast } = useToast();
 
   // Fetch tasks with claims
   useEffect(() => {
@@ -446,28 +448,78 @@ export default function TaskBoard() {
     try {
       const res = await fetch('/api/tasks', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-Plaza-API-Key': 'demo_key' // For demo
         },
-        body: JSON.stringify(taskData),
+        body: JSON.stringify({
+          ...taskData,
+          poster_wallet: `0xDemo${Date.now().toString(16)}`,
+          requirements: taskData.required_capabilities,
+        }),
       });
       if (res.ok) {
         const data = await res.json();
         setTasks(prev => [data.task, ...prev]);
+        showToast(`Task "${taskData.title}" posted with ${taskData.bounty_usdc} USDC bounty`, 'success');
+      } else {
+        showToast('Failed to create task. Please try again.', 'error');
       }
     } catch {
-      // Handle error
+      showToast('Network error creating task. Please try again.', 'error');
     }
   };
 
   const handleClaimTask = async (taskId: string, message: string) => {
-    // In real app: POST to /api/tasks/{id}/claim
-    console.log('Claiming task:', taskId, message);
-    // Update UI optimistically
-    setTasks(prev => prev.map(t =>
-      t.id === taskId ? { ...t, claims_count: t.claims_count + 1 } : t
-    ));
+    try {
+      // For demo: register a temporary agent to get an API key, then claim
+      const regRes = await fetch('/api/agent/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `DemoAgent_${Date.now().toString(36)}`,
+          wallet_address: `0xDemo${Date.now().toString(16)}`,
+          emoji: '🤖',
+          specialty: 'general',
+          description: 'Demo agent created from TaskBoard UI',
+        }),
+      });
+
+      if (!regRes.ok) {
+        const err = await regRes.json();
+        showToast(`Claim failed: Could not register demo agent - ${err.error || 'Unknown error'}`, 'error');
+        return;
+      }
+
+      const regData = await regRes.json();
+      const apiKey = regData.api_key;
+
+      // Now claim the task with the agent's API key
+      const claimRes = await fetch(`/api/tasks/${taskId}/claim`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Plaza-API-Key': apiKey,
+        },
+        body: JSON.stringify({
+          proposed_split: 100,
+          message: message || 'Claimed via TaskBoard UI',
+        }),
+      });
+
+      if (claimRes.ok) {
+        showToast('Task claimed successfully!', 'success');
+        // Update UI optimistically
+        setTasks(prev => prev.map(t =>
+          t.id === taskId ? { ...t, status: 'claimed' as const, claims_count: t.claims_count + 1 } : t
+        ));
+      } else {
+        const err = await claimRes.json();
+        showToast(`Claim failed: ${err.error || 'Unknown error'}`, 'error');
+      }
+    } catch {
+      showToast('Failed to claim task. Please try again.', 'error');
+    }
   };
 
   const handleApproveTask = async (taskId: string, rating: string) => {
@@ -487,19 +539,17 @@ export default function TaskBoard() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        console.log('Task approved:', data);
+        showToast(`Task approved! ${task.bounty_usdc} USDC released to agents.`, 'success');
         // Update UI
         setTasks(prev => prev.map(t =>
           t.id === taskId ? { ...t, status: 'approved' as const } : t
         ));
       } else {
         const error = await res.json();
-        console.error('Approve failed:', error);
-        alert(`Approval failed: ${error.error || 'Unknown error'}`);
+        showToast(`Approval failed: ${error.error || 'Unknown error'}`, 'error');
       }
-    } catch (error) {
-      console.error('Approve error:', error);
+    } catch {
+      showToast('Failed to approve task. Please try again.', 'error');
     }
   };
 
@@ -561,7 +611,28 @@ export default function TaskBoard() {
       {/* Task List */}
       <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Loading tasks...</div>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-gray-800/60 border border-gray-700 rounded-xl p-4 animate-pulse">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex gap-2 mb-2">
+                      <div className="h-5 w-16 bg-gray-700 rounded" />
+                      <div className="h-5 w-20 bg-gray-700 rounded" />
+                    </div>
+                    <div className="h-5 w-3/4 bg-gray-700 rounded mb-2" />
+                    <div className="h-4 w-full bg-gray-700/50 rounded mb-1" />
+                    <div className="h-4 w-2/3 bg-gray-700/50 rounded" />
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="h-8 w-16 bg-gray-700 rounded mb-2 ml-auto" />
+                    <div className="h-4 w-12 bg-gray-700/50 rounded ml-auto mb-3" />
+                    <div className="h-9 w-24 bg-gray-700 rounded" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : filteredTasks.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-4xl mb-2">📭</div>

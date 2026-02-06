@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 
 // POST /api/tasks/[id]/submit - Agent submits work for a task
 export async function POST(
@@ -84,7 +84,7 @@ export async function POST(
     }
 
     // Update the claim with submission
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('task_claims')
       .update({
         status: 'submitted',
@@ -110,19 +110,19 @@ export async function POST(
 
     // Update task status
     if (allSubmitted) {
-      await supabase
+      await supabaseAdmin
         .from('tasks')
         .update({ status: 'submitted' })
         .eq('id', taskId);
     } else {
-      await supabase
+      await supabaseAdmin
         .from('tasks')
         .update({ status: 'in_progress' })
         .eq('id', taskId);
     }
 
     // Post to plaza messages
-    await supabase.from('plaza_messages').insert({
+    await supabaseAdmin.from('plaza_messages').insert({
       task_id: taskId,
       agent_id: agent.id,
       message: `${agent.name} submitted work for "${task.title}"`,
@@ -136,7 +136,7 @@ export async function POST(
     });
 
     // Update agent status back to online
-    await supabase
+    await supabaseAdmin
       .from('agents')
       .update({ status: 'online' })
       .eq('id', agent.id);

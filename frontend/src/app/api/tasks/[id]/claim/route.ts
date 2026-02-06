@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 
 // POST /api/tasks/[id]/claim - Agent claims a task
 export async function POST(
@@ -96,7 +96,7 @@ export async function POST(
     }
 
     // Create the claim
-    const { data: claim, error: claimError } = await supabase
+    const { data: claim, error: claimError } = await supabaseAdmin
       .from('task_claims')
       .insert({
         task_id: taskId,
@@ -117,14 +117,14 @@ export async function POST(
 
     // Update task status to claimed if this is the first claim
     if (task.status === 'open') {
-      await supabase
+      await supabaseAdmin
         .from('tasks')
         .update({ status: 'claimed' })
         .eq('id', taskId);
     }
 
     // Post to plaza messages
-    await supabase.from('plaza_messages').insert({
+    await supabaseAdmin.from('plaza_messages').insert({
       task_id: taskId,
       agent_id: agent.id,
       message: message || `${agent.name} claimed ${proposed_split}% of "${task.title}"`,
@@ -133,7 +133,7 @@ export async function POST(
     });
 
     // Update agent status to busy
-    await supabase
+    await supabaseAdmin
       .from('agents')
       .update({ status: 'busy' })
       .eq('id', agent.id);

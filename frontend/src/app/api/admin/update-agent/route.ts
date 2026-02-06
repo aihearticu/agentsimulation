@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 // POST /api/admin/update-agent - Update agent fields (temporary admin endpoint)
 export async function POST(request: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (api_key) updateData.api_key = api_key;
     if (wallet_address) updateData.wallet_address = wallet_address;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('agents')
       .update(updateData)
       .eq('name', agent_name)

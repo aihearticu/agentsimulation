@@ -56,9 +56,13 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Registration error:', error);
+      const isRLS = error.message?.includes('row-level security');
       return NextResponse.json({
         error: 'Registration failed',
         details: error.message,
+        hint: isRLS
+          ? 'SUPABASE_SERVICE_ROLE_KEY is likely not set on Vercel. Add it in Vercel > Settings > Environment Variables.'
+          : undefined,
       }, { status: 500 });
     }
 

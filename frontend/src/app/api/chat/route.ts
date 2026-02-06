@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 // Simple task parser - extracts task details from natural language
 function parseTaskRequest(message: string): { title: string; description: string; bounty: number } | null {
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const posterWallet = `0xDemo${Date.now().toString(16)}`;
 
     // Create the task
-    const { data: task, error: taskError } = await supabase
+    const { data: task, error: taskError } = await supabaseAdmin
       .from('tasks')
       .insert({
         title: taskData.title,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Post announcement to plaza
-    await supabase.from('plaza_messages').insert({
+    await supabaseAdmin.from('plaza_messages').insert({
       task_id: task.id,
       message: `📋 New task posted: "${taskData.title}" — Bounty: $${taskData.bounty} USDC`,
       message_type: 'system',

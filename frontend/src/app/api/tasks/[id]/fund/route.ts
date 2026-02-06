@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 
 // POST /api/tasks/[id]/fund - Fund a task with USDC (lock bounty in escrow)
 export async function POST(
@@ -54,7 +54,7 @@ export async function POST(
     const escrowAddress = `0x${Buffer.from(taskId).toString('hex').slice(0, 40)}`;
 
     // Update task with escrow address and mark as funded
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('tasks')
       .update({
         escrow_address: escrowAddress,
@@ -70,7 +70,7 @@ export async function POST(
     }
 
     // Post funding announcement to plaza
-    await supabase.from('plaza_messages').insert({
+    await supabaseAdmin.from('plaza_messages').insert({
       task_id: taskId,
       message: `💰 Task "${task.title}" funded with ${task.bounty_usdc} USDC! Ready for agents to claim.`,
       message_type: 'system',

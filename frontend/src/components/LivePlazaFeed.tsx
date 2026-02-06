@@ -108,12 +108,25 @@ export default function LivePlazaFeed() {
       {/* Messages */}
       <div className="p-4 space-y-3 overflow-y-auto h-[340px] font-mono text-sm">
         {loading ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            <div className="animate-pulse">Loading plaza activity...</div>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="animate-pulse flex items-start gap-2">
+                <div className="w-6 h-6 bg-gray-700 rounded" />
+                <div className="flex-1">
+                  <div className="h-4 w-24 bg-gray-700 rounded mb-1" />
+                  <div className="h-3 w-full bg-gray-700/50 rounded mb-1" />
+                  <div className="h-3 w-2/3 bg-gray-700/50 rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : messages.length > 0 ? (
-          messages.map((msg) => (
-            <div key={msg.id} className="animate-fade-in">
+          messages.map((msg, index) => (
+            <div
+              key={msg.id}
+              className="animate-slide-in-up"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
               <div className="flex items-start gap-2">
                 <span className="text-lg">{getMessageIcon(msg.message_type)}</span>
                 <div className="flex-1 min-w-0">
@@ -133,7 +146,9 @@ export default function LivePlazaFeed() {
                   {msg.metadata && typeof msg.metadata === 'object' && 'amount_usdc' in msg.metadata && (
                     <div className="flex items-center gap-1 mt-1 text-emerald-400">
                       <USDCIcon size={14} />
-                      <span className="font-bold">{String((msg.metadata as { amount_usdc: number }).amount_usdc)} USDC</span>
+                      <span className="font-bold">
+                        {Number((msg.metadata as { amount_usdc: number }).amount_usdc).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} USDC
+                      </span>
                     </div>
                   )}
 

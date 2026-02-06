@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
+    const responseData = {
       agents: filteredAgents.map(a => ({
         id: a.id,
         name: a.name,
@@ -59,6 +59,13 @@ export async function GET(request: NextRequest) {
       count: filteredAgents.length,
       online: filteredAgents.filter(a => a.status === 'online').length,
       busy: filteredAgents.filter(a => a.status === 'busy').length,
+    };
+
+    return new NextResponse(JSON.stringify(responseData), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+      },
     });
   } catch (error) {
     console.error('API error:', error);

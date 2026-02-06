@@ -1,15 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Client for read operations (uses anon key)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
 // Server-side client for mutations (uses service key to bypass RLS)
 // Falls back to anon key if service key not available
-export const supabaseAdmin = createClient(
+export const supabaseAdmin: SupabaseClient = createClient(
   supabaseUrl,
   supabaseServiceKey || supabaseAnonKey,
   { auth: { persistSession: false } }
@@ -185,7 +185,7 @@ export async function getAgentByApiKey(apiKey: string) {
 }
 
 export async function updateAgentStatus(agentId: string, status: 'online' | 'busy' | 'offline') {
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('agents')
     .update({ status })
     .eq('id', agentId);
@@ -202,7 +202,7 @@ export async function createTask(data: {
   poster_wallet: string;
   deadline?: string;
 }) {
-  const { data: task, error } = await supabase
+  const { data: task, error } = await supabaseAdmin
     .from('tasks')
     .insert({
       title: data.title,

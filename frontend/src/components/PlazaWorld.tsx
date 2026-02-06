@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 interface Agent {
   id: string;
   name: string;
+  emoji?: string;
   capabilities: string[];
   status: 'online' | 'busy' | 'offline';
   current_task?: string;
@@ -33,16 +34,17 @@ function getAgentPosition(agentId: string, index: number, total: number) {
   const radius = 30; // Distance from center
   const centerX = 50;
   const centerY = 50;
-  
+
   return {
     x: centerX + radius * Math.cos(angle),
     y: centerY + radius * Math.sin(angle),
   };
 }
 
-// Generate emoji based on capabilities
-function getAgentEmoji(capabilities: string[]): string {
-  const capStr = capabilities.join(' ').toLowerCase();
+// Generate emoji based on capabilities (fallback when API emoji not available)
+function getAgentEmoji(agent: Agent): string {
+  if (agent.emoji) return agent.emoji;
+  const capStr = (agent.capabilities || []).join(' ').toLowerCase();
   if (capStr.includes('research') || capStr.includes('analysis')) return '🔍';
   if (capStr.includes('code') || capStr.includes('develop') || capStr.includes('debug')) return '💻';
   if (capStr.includes('writ') || capStr.includes('content')) return '✍️';
@@ -70,6 +72,7 @@ export default function PlazaWorld() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
+  const [openTaskCount, setOpenTaskCount] = useState(0);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
   const addLog = useCallback((msg: string) => {
@@ -82,13 +85,13 @@ export default function PlazaWorld() {
       const res = await fetch('/api/agents');
       if (!res.ok) throw new Error('Failed to fetch agents');
       const data = await res.json();
-      
+
       // Add positions to agents
       const agentsWithPos = data.agents.map((agent: Agent, i: number) => ({
         ...agent,
         ...getAgentPosition(agent.id, i, data.agents.length),
       }));
-      
+
       setAgents(prev => {
         // Check for new agents
         const prevIds = new Set(prev.map(a => a.id));
@@ -99,9 +102,9 @@ export default function PlazaWorld() {
         });
         return agentsWithPos;
       });
-      
+
       setLoading(false);
-    } catch (err) {
+    } catch {
       setError('Failed to load agents');
       setLoading(false);
     }
@@ -113,7 +116,9 @@ export default function PlazaWorld() {
       const res = await fetch('/api/tasks');
       if (!res.ok) throw new Error('Failed to fetch tasks');
       const data = await res.json();
-      setTasks(data.tasks || []);
+      const taskList = data.tasks || [];
+      setTasks(taskList);
+      setOpenTaskCount(taskList.filter((t: Task) => t.status === 'open').length);
     } catch {
       // Silently fail for tasks
     }
@@ -123,7 +128,7 @@ export default function PlazaWorld() {
   useEffect(() => {
     fetchAgents();
     fetchTasks();
-    
+
     // Poll every 5 seconds for updates
     pollRef.current = setInterval(() => {
       fetchAgents();
@@ -159,6 +164,61 @@ export default function PlazaWorld() {
 
   return (
     <div className="bg-gray-900/80 border border-gray-700 rounded-2xl overflow-hidden">
+      {/* CSS Keyframe Animations */}
+      <style jsx>{`
+        @keyframes agent-float {
+          0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
+          50% { transform: translate(-50%, -50%) translateY(-6px); }
+        }
+        @keyframes agent-float-alt {
+          0%, 100% { transform: translate(-50%, -50%) translateY(-3px); }
+          50% { transform: translate(-50%, -50%) translateY(3px); }
+        }
+        @keyframes usdc-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.2), 0 0 40px rgba(34, 197, 94, 0.1); }
+          50% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.4), 0 0 60px rgba(34, 197, 94, 0.2), 0 0 80px rgba(34, 197, 94, 0.1); }
+        }
+        @keyframes usdc-ring {
+          0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+          100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+        }
+        @keyframes particle-orbit {
+          0% { transform: rotate(0deg) translateX(28px) rotate(0deg); opacity: 0.8; }
+          50% { opacity: 1; }
+          100% { transform: rotate(360deg) translateX(28px) rotate(-360deg); opacity: 0.8; }
+        }
+        @keyframes particle-orbit-reverse {
+          0% { transform: rotate(0deg) translateX(22px) rotate(0deg); opacity: 0.6; }
+          50% { opacity: 1; }
+          100% { transform: rotate(-360deg) translateX(22px) rotate(360deg); opacity: 0.6; }
+        }
+        @keyframes dash-flow {
+          0% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: -20; }
+        }
+        .agent-node {
+          animation: agent-float 3s ease-in-out infinite;
+        }
+        .agent-node-alt {
+          animation: agent-float-alt 3.5s ease-in-out infinite;
+        }
+        .usdc-pool {
+          animation: usdc-glow 2s ease-in-out infinite;
+        }
+        .usdc-ring {
+          animation: usdc-ring 2s ease-out infinite;
+        }
+        .particle {
+          animation: particle-orbit 2s linear infinite;
+        }
+        .particle-reverse {
+          animation: particle-orbit-reverse 2.5s linear infinite;
+        }
+        .flowing-dash {
+          animation: dash-flow 1s linear infinite;
+        }
+      `}</style>
+
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800/50">
         <div className="flex items-center gap-2">
@@ -186,54 +246,83 @@ export default function PlazaWorld() {
         <div className="absolute left-1/2 top-[10%] transform -translate-x-1/2 z-10">
           <div className="bg-blue-500/20 border-2 border-blue-500/50 rounded-xl px-4 py-2 text-center">
             <div className="text-2xl">📋</div>
-            <div className="text-blue-400 text-xs font-bold">{tasks.filter(t => t.status === 'open').length} OPEN TASKS</div>
+            <div className="text-blue-400 text-xs font-bold">{openTaskCount} OPEN TASKS</div>
           </div>
         </div>
 
-        {/* USDC Pool (center) */}
+        {/* USDC Pool (center) with pulsing glow */}
         <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-          <div className="bg-green-500/10 border border-green-500/30 rounded-full w-24 h-24 flex flex-col items-center justify-center">
+          {/* Pulsing ring effect */}
+          <div className="absolute left-1/2 top-1/2 usdc-ring border border-green-500/30 rounded-full w-24 h-24" />
+          <div className="absolute left-1/2 top-1/2 usdc-ring border border-green-500/20 rounded-full w-24 h-24" style={{ animationDelay: '1s' }} />
+          {/* Pool */}
+          <div className="usdc-pool bg-green-500/10 border border-green-500/30 rounded-full w-24 h-24 flex flex-col items-center justify-center relative">
             <div className="text-2xl">💰</div>
             <div className="text-green-400 text-xs font-bold">USDC</div>
           </div>
         </div>
 
         {/* Agents */}
-        {agents.map((agent) => {
-          const emoji = getAgentEmoji(agent.capabilities);
+        {agents.map((agent, index) => {
+          const emoji = getAgentEmoji(agent);
           const color = getAgentColor(agent.name);
-          
+          const floatClass = index % 2 === 0 ? 'agent-node' : 'agent-node-alt';
+
           return (
             <div
               key={agent.id}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-1000"
-              style={{ 
-                left: `${agent.x || 50}%`, 
+              className={`absolute ${floatClass} transition-all duration-1000`}
+              style={{
+                left: `${agent.x || 50}%`,
                 top: `${agent.y || 50}%`,
-                zIndex: 20
+                zIndex: 20,
+                animationDelay: `${index * 0.3}s`,
               }}
             >
+              {/* Particle effects for busy agents */}
+              {agent.status === 'busy' && (
+                <>
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="particle" style={{ animationDelay: '0s' }}>
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }} />
+                    </div>
+                  </div>
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="particle" style={{ animationDelay: '0.7s' }}>
+                      <div className="w-1 h-1 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}` }} />
+                    </div>
+                  </div>
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="particle-reverse" style={{ animationDelay: '0.3s' }}>
+                      <div className="w-1 h-1 rounded-full bg-yellow-400" style={{ boxShadow: '0 0 4px #eab308' }} />
+                    </div>
+                  </div>
+                </>
+              )}
+
               {/* Agent body */}
-              <div 
-                className={`relative flex items-center justify-center w-14 h-14 rounded-full text-2xl transition-transform cursor-pointer hover:scale-110 ${
-                  agent.status === 'busy' ? 'animate-pulse' : ''
-                }`}
-                style={{ 
+              <div
+                className={`relative flex items-center justify-center w-14 h-14 rounded-full text-2xl transition-transform cursor-pointer hover:scale-110`}
+                style={{
                   backgroundColor: `${color}30`,
                   border: `2px solid ${color}`,
-                  boxShadow: agent.status === 'online' ? `0 0 20px ${color}40` : 'none'
+                  boxShadow: agent.status === 'online'
+                    ? `0 0 20px ${color}40`
+                    : agent.status === 'busy'
+                    ? `0 0 25px ${color}50, 0 0 50px ${color}20`
+                    : 'none'
                 }}
                 title={`${agent.name}\n${agent.capabilities.join(', ')}\n${agent.stats?.tasks_completed || 0} tasks | $${agent.stats?.total_earned_usdc || 0}`}
               >
                 {emoji}
-                
+
                 {/* Status indicator */}
                 <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-gray-900 ${
                   agent.status === 'online' ? 'bg-green-500' :
                   agent.status === 'busy' ? 'bg-yellow-500 animate-pulse' :
                   'bg-gray-500'
                 }`} />
-                
+
                 {/* Moltbook verified badge */}
                 {agent.moltbook_verified && (
                   <div className="absolute -bottom-1 -right-1 text-xs">🦞</div>
@@ -264,11 +353,12 @@ export default function PlazaWorld() {
           </div>
         )}
 
-        {/* Connection lines for busy agents */}
+        {/* Connection lines for busy agents (animated dashes) */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }}>
           {agents.filter(a => a.status === 'busy').map(agent => (
             <line
               key={`line-${agent.id}`}
+              className="flowing-dash"
               x1={`${agent.x}%`}
               y1={`${agent.y}%`}
               x2="50%"
@@ -276,7 +366,7 @@ export default function PlazaWorld() {
               stroke={getAgentColor(agent.name)}
               strokeWidth="2"
               strokeDasharray="5,5"
-              opacity="0.5"
+              opacity="0.6"
             />
           ))}
         </svg>

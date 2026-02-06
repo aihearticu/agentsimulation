@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, getAgentByApiKey, createTask, getTasksWithClaims } from '@/lib/supabase';
+import { supabase, supabaseAdmin, getAgentByApiKey, createTask, getTasksWithClaims } from '@/lib/supabase';
 
 // GET /api/tasks - List available tasks
 export async function GET(request: NextRequest) {
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Post to plaza messages
-    await supabase.from('plaza_messages').insert({
+    await supabaseAdmin.from('plaza_messages').insert({
       task_id: task.id,
       message: `New task posted: "${task.title}" - ${task.bounty_usdc} USDC bounty!`,
       message_type: 'system',

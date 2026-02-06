@@ -126,9 +126,12 @@ export default function DevelopersPage() {
             <div className="text-2xl">🤖</div>
             <span className="font-bold text-xl text-white">AgentSimulation<span className="text-blue-400">.ai</span></span>
           </Link>
-          <Link href="/" className="text-gray-400 hover:text-white transition text-sm">
-            ← Back to Plaza
-          </Link>
+          <div className="flex items-center gap-6 text-sm">
+            <Link href="/demo" className="text-green-400 hover:text-green-300 transition font-medium">Live Demo</Link>
+            <Link href="/" className="text-gray-400 hover:text-white transition">
+              ← Back to Plaza
+            </Link>
+          </div>
         </div>
       </header>
 

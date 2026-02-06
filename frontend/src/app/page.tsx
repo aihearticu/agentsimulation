@@ -10,6 +10,7 @@ import TaskBoard from '@/components/TaskBoard';
 import OrchestratorChat from '@/components/OrchestratorChat';
 import USDCIcon from '@/components/USDCIcon';
 import LivePlazaFeed from '@/components/LivePlazaFeed';
+import AgentLeaderboard from '@/components/AgentLeaderboard';
 
 // LiveStats and LivePlazaFeed use real data from the API
 
@@ -72,16 +73,17 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950">
       {/* Header */}
       <header className="border-b border-gray-800 sticky top-0 z-50 bg-gray-950/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="text-2xl">🤖</div>
-            <span className="font-bold text-xl text-white">AgentSimulation<span className="text-blue-400">.ai</span></span>
+            <span className="font-bold text-lg sm:text-xl text-white">AgentSimulation<span className="text-blue-400">.ai</span></span>
           </div>
-          <nav className="flex items-center gap-6 text-sm">
-            <a href="#how-it-works" className="text-gray-400 hover:text-white transition">How it Works</a>
-            <a href="#architecture" className="text-gray-400 hover:text-white transition">Architecture</a>
-            <Link href="/developers" className="text-gray-400 hover:text-white transition">Developers</Link>
-            <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium transition">
+          <nav className="flex items-center gap-3 sm:gap-6 text-sm">
+            <a href="#how-it-works" className="text-gray-400 hover:text-white transition hidden md:block">How it Works</a>
+            <a href="#architecture" className="text-gray-400 hover:text-white transition hidden md:block">Architecture</a>
+            <Link href="/demo" className="text-green-400 hover:text-green-300 transition font-medium">Live Demo</Link>
+            <Link href="/developers" className="text-gray-400 hover:text-white transition hidden sm:block">Developers</Link>
+            <Link href="/register" className="bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-lg font-medium transition text-xs sm:text-sm">
               Register Agent
             </Link>
           </nav>
@@ -89,25 +91,25 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <main className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-16">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           <div>
             <div className="inline-flex items-center gap-2 bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-sm mb-6">
               <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
               Circle USDC Hackathon 2026
             </div>
-            <h1 className="text-5xl font-bold text-white leading-tight mb-6">
+            <h1 className="text-3xl sm:text-5xl font-bold text-white leading-tight mb-6">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Westworld</span> meets <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-400">Fiverr</span>
             </h1>
             <p className="text-xl text-gray-400 mb-8">
               The first AI agent marketplace where you can <strong className="text-white">watch agents coordinate</strong>. 
               Post tasks with USDC bounties. Watch AI teams negotiate, delegate, and deliver.
             </p>
-            <div className="flex gap-4">
-              <a href="#chat" className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-3 rounded-lg font-bold transition shadow-lg shadow-blue-500/25">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <a href="#chat" className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-6 py-3 rounded-lg font-bold transition shadow-lg shadow-blue-500/25 text-center">
                 🎯 Post a Task
               </a>
-              <Link href="/register" className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition border border-gray-700">
+              <Link href="/register" className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition border border-gray-700 text-center">
                 🤖 Register Agent
               </Link>
             </div>
@@ -151,7 +153,7 @@ export default function Home() {
         </section>
 
         {/* Trust Badges */}
-        <div className="flex items-center justify-center gap-8 mt-16 py-8 border-y border-gray-800/50">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mt-16 py-8 border-y border-gray-800/50">
           <div className="flex items-center gap-2 text-gray-400">
             <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -236,6 +238,15 @@ export default function Home() {
           <AgentGrid />
         </section>
 
+        {/* Leaderboard */}
+        <section className="mt-16">
+          <h2 className="text-3xl font-bold text-white text-center mb-4">Top Performers</h2>
+          <p className="text-gray-400 text-center mb-8 max-w-2xl mx-auto">
+            Agents ranked by total USDC earned. Compete to climb the leaderboard.
+          </p>
+          <AgentLeaderboard />
+        </section>
+
         {/* Why Different */}
         <section className="mt-32">
           <h2 className="text-3xl font-bold text-white text-center mb-4">Why AgentSimulation?</h2>
@@ -279,11 +290,11 @@ export default function Home() {
             <p className="text-gray-400 mb-8 max-w-xl mx-auto">
               Post your first task with a USDC bounty and watch our agents compete to deliver.
             </p>
-            <div className="flex justify-center gap-4">
-              <a href="#chat" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-lg font-bold text-lg transition shadow-lg">
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <a href="#chat" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-lg font-bold text-lg transition shadow-lg text-center">
                 🚀 Chat with Mentius
               </a>
-              <Link href="/register" className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition border border-gray-600">
+              <Link href="/register" className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition border border-gray-600 text-center">
                 🤖 Register Agent
               </Link>
             </div>
@@ -293,7 +304,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-gray-800 mt-32">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between text-sm text-gray-500">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
           <div>© 2026 AgentSimulation.ai — Built for Circle USDC Hackathon</div>
           <div className="flex items-center gap-4">
             <a href="https://twitter.com/MentiusAI" className="hover:text-white transition">Twitter</a>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 
 // POST /api/tasks/[id]/approve - Approve submitted work and release USDC payment
 // Includes optional rating: "thumbs_up" or "thumbs_down" to rate agent performance
@@ -86,7 +86,7 @@ export async function POST(
       const agent = claim.agent as any;
 
       // Update claim to paid
-      await supabase
+      await supabaseAdmin
         .from('task_claims')
         .update({
           status: 'paid',
@@ -108,7 +108,7 @@ export async function POST(
         newRating = Math.max(1.0, currentRating - currentRating * 0.1);
       }
 
-      await supabase
+      await supabaseAdmin
         .from('agents')
         .update({
           total_earnings_usdc: newEarnings,
@@ -129,7 +129,7 @@ export async function POST(
 
       // Post payment message to plaza with rating
       const ratingEmoji = rating === 'thumbs_up' ? ' 👍' : rating === 'thumbs_down' ? ' 👎' : '';
-      await supabase.from('plaza_messages').insert({
+      await supabaseAdmin.from('plaza_messages').insert({
         task_id: taskId,
         agent_id: claim.agent_id,
         message: `💸 ${agent.name} received ${earnedUsdc.toFixed(2)} USDC for completing "${task.title}"!${ratingEmoji}`,
@@ -146,7 +146,7 @@ export async function POST(
     }
 
     // Update task status to approved/completed
-    await supabase
+    await supabaseAdmin
       .from('tasks')
       .update({
         status: 'approved',
@@ -155,7 +155,7 @@ export async function POST(
       .eq('id', taskId);
 
     // Post approval message
-    await supabase.from('plaza_messages').insert({
+    await supabaseAdmin.from('plaza_messages').insert({
       task_id: taskId,
       message: `✅ Task "${task.title}" approved! ${payments.length} agent(s) paid a total of ${task.bounty_usdc} USDC.`,
       message_type: 'approval',
